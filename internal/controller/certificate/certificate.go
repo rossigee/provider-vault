@@ -40,12 +40,12 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		}),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithPollInterval(o.PollInterval),
-		managed.WithRecorder(recorder.NewNopRecorder()))
+		managed.WithRecorder(recorder.NewNopRecorder()),
+		managed.WithDeterministicExternalName(true))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
 		WithOptions(o.ForControllerRuntime()).
-		WithEventFilter(resource.DesiredStateChanged()).
 		For(&v1beta1.Certificate{}).
 		Complete(r)
 }

@@ -42,7 +42,8 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		}),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithPollInterval(o.PollInterval),
-		managed.WithRecorder(recorder.NewNopRecorder()))
+		managed.WithRecorder(recorder.NewNopRecorder()),
+		managed.WithDeterministicExternalName(true))
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
