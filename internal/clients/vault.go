@@ -382,6 +382,64 @@ func (c *VaultClient) RevokeCertificate(ctx context.Context, backend, serial str
 	return err
 }
 
+// DatabaseRole
+
+func (c *VaultClient) CreateDatabaseRole(ctx context.Context, backend, name string, params map[string]interface{}) error {
+	apiPath := fmt.Sprintf("/v1/%s/roles/%s", backend, name)
+	_, err := c.request(ctx, http.MethodPost, apiPath, params)
+	return err
+}
+
+func (c *VaultClient) GetDatabaseRole(ctx context.Context, backend, name string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/%s/roles/%s", backend, name)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse database role response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) DeleteDatabaseRole(ctx context.Context, backend, name string) error {
+	apiPath := fmt.Sprintf("/v1/%s/roles/%s", backend, name)
+	_, err := c.request(ctx, http.MethodDelete, apiPath, nil)
+	return err
+}
+
+// TransitKey
+
+func (c *VaultClient) CreateTransitKey(ctx context.Context, backend, name string, params map[string]interface{}) error {
+	apiPath := fmt.Sprintf("/v1/%s/keys/%s", backend, name)
+	_, err := c.request(ctx, http.MethodPost, apiPath, params)
+	return err
+}
+
+func (c *VaultClient) GetTransitKey(ctx context.Context, backend, name string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/%s/keys/%s", backend, name)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse transit key response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) DeleteTransitKey(ctx context.Context, backend, name string) error {
+	apiPath := fmt.Sprintf("/v1/%s/keys/%s", backend, name)
+	_, err := c.request(ctx, http.MethodDelete, apiPath, nil)
+	return err
+}
+
 // Helper to read token from k8s secret and create client from ProviderConfig
 
 type Config struct {

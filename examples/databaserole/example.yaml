@@ -1,0 +1,17 @@
+apiVersion: databaserole.vault.m.crossplane.io/v1beta1
+kind: DatabaseRole
+metadata:
+  name: postgres-app-reader
+  namespace: production
+spec:
+  forProvider:
+    backend: postgres
+    name: app-reader
+    dbName: myapp-db
+    creationStatements:
+      - CREATE ROLE "{{name}}" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}';
+      - GRANT SELECT ON ALL TABLES IN SCHEMA public TO "{{name}}";
+    defaultTtl: 1h
+    maxTtl: 24h
+  providerConfigRef:
+    name: default

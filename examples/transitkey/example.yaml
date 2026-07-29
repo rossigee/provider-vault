@@ -1,0 +1,14 @@
+apiVersion: transitkey.vault.m.crossplane.io/v1beta1
+kind: TransitKey
+metadata:
+  name: app-encryption-key
+  namespace: production
+spec:
+  forProvider:
+    backend: transit
+    name: app-encryption-key
+    type: aes256-gcm96
+    exportable: false
+    autoRotatePeriod: 8760h
+  providerConfigRef:
+    name: default
