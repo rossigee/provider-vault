@@ -7,6 +7,7 @@ import (
 	"github.com/rossigee/provider-vault/internal/controller/authbackendrole"
 	"github.com/rossigee/provider-vault/internal/controller/authmethod"
 	"github.com/rossigee/provider-vault/internal/controller/certificate"
+	"github.com/rossigee/provider-vault/internal/controller/databasebackend"
 	"github.com/rossigee/provider-vault/internal/controller/databaserole"
 	"github.com/rossigee/provider-vault/internal/controller/identityentity"
 	"github.com/rossigee/provider-vault/internal/controller/identitygroup"
@@ -29,6 +30,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		authbackendrole.Setup,
 		pkiconfig.Setup,
 		certificate.Setup,
+		databasebackend.Setup,
 		databaserole.Setup,
 		transitkey.Setup,
 		identityentity.Setup,

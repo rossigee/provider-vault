@@ -28,7 +28,7 @@ A lightweight Crossplane v2 provider for managing HashiCorp Vault resources, des
 - **PKI Roles**: Configure certificate roles for PKI secret engines
 - **PKI Config**: Generate root CA certificates for PKI secret engines
 - **Certificate Issuance**: Issue TLS certificates from PKI roles with automatic renewal
-- **Database Roles**: Dynamic database credential roles (PostgreSQL, MySQL, etc.)
+- **Database Backends**: Configure database connections (PostgreSQL, MySQL, etc.)
 - **Transit Keys**: Encryption key management for transit secret engine
 - **Token Management**: Create, renew, and revoke Vault tokens with automatic renewal
 - **Identity Entities**: Manage Vault identity entities with policies and metadata
@@ -281,6 +281,7 @@ The Certificate resource automatically writes the issued certificate, CA chain, 
 | AuthBackendRole | `authbackendrole.vault.m.crossplane.io/v1beta1` | JWT/AppRole/Kubernetes auth role management |
 | PKIConfig | `pkiconfig.vault.m.crossplane.io/v1beta1` | PKI root CA generation and URL configuration |
 | Certificate | `certificate.vault.m.crossplane.io/v1beta1` | PKI certificate issuance with auto-renewal |
+| DatabaseBackend | `databasebackend.vault.m.crossplane.io/v1beta1` | Database connection configuration (PostgreSQL, MySQL, etc.) |
 | DatabaseRole | `databaserole.vault.m.crossplane.io/v1beta1` | Dynamic database credential roles |
 | TransitKey | `transitkey.vault.m.crossplane.io/v1beta1` | Encryption key management |
 | Token | `token.vault.m.crossplane.io/v1beta1` | Token create/renew/revoke with k8s Secret output |

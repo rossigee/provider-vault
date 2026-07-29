@@ -567,6 +567,35 @@ func (c *VaultClient) DeleteIdentityGroup(ctx context.Context, name string) erro
 	return err
 }
 
+// DatabaseBackend
+
+func (c *VaultClient) CreateDatabaseBackendConfig(ctx context.Context, backend, name string, params map[string]interface{}) error {
+	apiPath := fmt.Sprintf("/v1/%s/config/%s", backend, name)
+	_, err := c.request(ctx, http.MethodPost, apiPath, params)
+	return err
+}
+
+func (c *VaultClient) GetDatabaseBackendConfig(ctx context.Context, backend, name string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/%s/config/%s", backend, name)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse database backend config response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) DeleteDatabaseBackendConfig(ctx context.Context, backend, name string) error {
+	apiPath := fmt.Sprintf("/v1/%s/config/%s", backend, name)
+	_, err := c.request(ctx, http.MethodDelete, apiPath, nil)
+	return err
+}
+
 // Helper to read token from k8s secret and create client from ProviderConfig
 
 type Config struct {

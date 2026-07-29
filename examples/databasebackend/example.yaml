@@ -1,0 +1,19 @@
+apiVersion: databasebackend.vault.m.crossplane.io/v1beta1
+kind: DatabaseBackend
+metadata:
+  name: postgres-primary
+  namespace: production
+spec:
+  forProvider:
+    backend: postgres
+    name: primary
+    pluginName: postgresql-database-plugin
+    connectionUrl: postgresql://{{username}}:{{password}}@postgres.production.svc:5432/myapp
+    username: vault
+    password: s3cret
+    allowedRoles:
+      - app-reader
+    maxConnectionLifetime: 5m
+    verifyConnection: true
+  providerConfigRef:
+    name: default

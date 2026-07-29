@@ -6,6 +6,7 @@ import (
 	authbackendrolev1beta1 "github.com/rossigee/provider-vault/apis/authbackendrole/v1beta1"
 	authmethodv1beta1 "github.com/rossigee/provider-vault/apis/authmethod/v1beta1"
 	certificatev1beta1 "github.com/rossigee/provider-vault/apis/certificate/v1beta1"
+	databasebackendv1beta1 "github.com/rossigee/provider-vault/apis/databasebackend/v1beta1"
 	databaserolev1beta1 "github.com/rossigee/provider-vault/apis/databaserole/v1beta1"
 	identityentityv1beta1 "github.com/rossigee/provider-vault/apis/identityentity/v1beta1"
 	identitygroupv1beta1 "github.com/rossigee/provider-vault/apis/identitygroup/v1beta1"
@@ -45,6 +46,9 @@ func AddToScheme(s *runtime.Scheme) error {
 		return err
 	}
 	if err := certificatev1beta1.AddToScheme(s); err != nil {
+		return err
+	}
+	if err := databasebackendv1beta1.AddToScheme(s); err != nil {
 		return err
 	}
 	if err := databaserolev1beta1.AddToScheme(s); err != nil {
