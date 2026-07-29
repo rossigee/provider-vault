@@ -6,7 +6,7 @@ IMAGE ?= $(BUILD_REGISTRY)/provider-vault:$(VERSION)
 include ../../../build/makelib/imagelight.mk
 
 img.build: ../../../_output/bin/$(PLATFORM)/provider
-	@$(MAKE) BUILD_ARGS="--load" img.build.shared
+	@$(MAKE) BUILD_ARGS="--load --no-cache" img.build.shared
 
 ../../../_output/bin/$(PLATFORM)/provider:
 	@$(MAKE) -C ../../.. go.build PLATFORM=$(PLATFORM)

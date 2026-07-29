@@ -3,6 +3,8 @@ package clients
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +12,7 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
@@ -17,26 +20,52 @@ import (
 
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	vaultv1beta1 "github.com/rossigee/provider-vault/apis/v1beta1"
+	"github.com/rossigee/provider-vault/internal/version"
 )
 
 const vaultTokenHeader = "X-Vault-Token"
 
 type VaultClient struct {
-	baseURL    *url.URL
-	httpClient *http.Client
-	token      string
+	baseURL        *url.URL
+	httpClient     *http.Client
+	token          string
+	vaultNamespace string
 }
 
-func NewVaultClientFromConfig(baseURL string, token string, tlsInsecure bool) (*VaultClient, error) {
+func NewVaultClientFromConfig(baseURL string, token string, tlsInsecure bool, caCertPEM, clientCertPEM, clientKeyPEM []byte) (*VaultClient, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse vault address")
 	}
+
+	tlsConfig := &tls.Config{
+		InsecureSkipVerify: tlsInsecure,
+		NextProtos:         []string{"http/1.1"},
+	}
+
+	if len(caCertPEM) > 0 {
+		caPool := x509.NewCertPool()
+		if !caPool.AppendCertsFromPEM(caCertPEM) {
+			return nil, errors.New("failed to parse CA certificate PEM")
+		}
+		tlsConfig.RootCAs = caPool
+	}
+
+	if len(clientCertPEM) > 0 && len(clientKeyPEM) > 0 {
+		cert, err := tls.X509KeyPair(clientCertPEM, clientKeyPEM)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse TLS client cert/key")
+		}
+		tlsConfig.Certificates = []tls.Certificate{cert}
+	}
+
 	return &VaultClient{
 		baseURL: u,
 		httpClient: &http.Client{
 			Transport: &http.Transport{
-				TLSClientConfig: nil,
+				TLSClientConfig: tlsConfig,
+				TLSNextProto:    make(map[string]func(authority string, c *tls.Conn) http.RoundTripper),
+				IdleConnTimeout: 30 * time.Second,
 			},
 		},
 		token: token,
@@ -65,6 +94,10 @@ func (c *VaultClient) request(ctx context.Context, method, reqPath string, body 
 	}
 	req.Header.Set(vaultTokenHeader, c.token)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "provider-vault/"+version.Version)
+	if c.vaultNamespace != "" {
+		req.Header.Set("X-Vault-Namespace", c.vaultNamespace)
+	}
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -596,12 +629,89 @@ func (c *VaultClient) DeleteDatabaseBackendConfig(ctx context.Context, backend, 
 	return err
 }
 
+// KubernetesAuthConfig
+
+func (c *VaultClient) ConfigureKubernetesAuth(ctx context.Context, backend string, params map[string]interface{}) error {
+	apiPath := fmt.Sprintf("/v1/auth/%s/config", backend)
+	_, err := c.request(ctx, http.MethodPost, apiPath, params)
+	return err
+}
+
+func (c *VaultClient) GetKubernetesAuthConfig(ctx context.Context, backend string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/auth/%s/config", backend)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse kubernetes auth config response")
+	}
+	return result.Data, nil
+}
+
+// AppRoleSecretID
+
+func (c *VaultClient) GenerateAppRoleSecretID(ctx context.Context, backend, roleName string, params map[string]interface{}) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/auth/%s/role/%s/secret-id", backend, roleName)
+	resp, err := c.request(ctx, http.MethodPost, apiPath, params)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse secret-id response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) LookupAppRoleSecretID(ctx context.Context, backend, roleName, accessor string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/auth/%s/role/%s/secret-id-accessor/lookup", backend, roleName)
+	resp, err := c.request(ctx, http.MethodPost, apiPath, map[string]string{
+		"secret_id_accessor": accessor,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse secret-id lookup response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) DestroyAppRoleSecretID(ctx context.Context, backend, roleName, secretID string) error {
+	apiPath := fmt.Sprintf("/v1/auth/%s/role/%s/secret-id/destroy", backend, roleName)
+	_, err := c.request(ctx, http.MethodPost, apiPath, map[string]string{
+		"secret_id": secretID,
+	})
+	return err
+}
+
+func (c *VaultClient) DestroyAppRoleSecretIDByAccessor(ctx context.Context, backend, roleName, accessor string) error {
+	apiPath := fmt.Sprintf("/v1/auth/%s/role/%s/secret-id-accessor/destroy", backend, roleName)
+	_, err := c.request(ctx, http.MethodPost, apiPath, map[string]string{
+		"secret_id_accessor": accessor,
+	})
+	return err
+}
+
 // Helper to read token from k8s secret and create client from ProviderConfig
 
 type Config struct {
-	Address  string
-	Token    string
-	Insecure bool
+	Address       string
+	Token         string
+	Insecure      bool
+	CACertPEM     []byte
+	ClientCertPEM []byte
+	ClientKeyPEM  []byte
+	VaultNamespace string
 }
 
 func GetConfig(ctx context.Context, kube client.Client, pc *vaultv1beta1.ProviderConfig) (*Config, error) {
@@ -620,7 +730,7 @@ func GetConfig(ctx context.Context, kube client.Client, pc *vaultv1beta1.Provide
 		return nil, errors.Wrap(err, "cannot read vault token secret")
 	}
 
-	token, ok := secret.Data[pc.Spec.Credentials.SecretRef.Key]
+	raw, ok := secret.Data[pc.Spec.Credentials.SecretRef.Key]
 	if !ok {
 		return nil, fmt.Errorf("secret %s/%s missing key %s",
 			pc.Spec.Credentials.SecretRef.Namespace,
@@ -628,16 +738,66 @@ func GetConfig(ctx context.Context, kube client.Client, pc *vaultv1beta1.Provide
 			pc.Spec.Credentials.SecretRef.Key)
 	}
 
+	token := strings.TrimSpace(string(raw))
+	var parsed struct {
+		Token string `json:"token"`
+	}
+	if err := json.Unmarshal([]byte(token), &parsed); err == nil && parsed.Token != "" {
+		token = parsed.Token
+	}
+
 	insecure := false
 	if pc.Spec.InsecureSkipVerify != nil {
 		insecure = *pc.Spec.InsecureSkipVerify
 	}
 
-	return &Config{
+	cfg := &Config{
 		Address:  pc.Spec.Address,
-		Token:    string(token),
+		Token:    token,
 		Insecure: insecure,
-	}, nil
+	}
+
+	if pc.Spec.VaultNamespace != nil {
+		cfg.VaultNamespace = *pc.Spec.VaultNamespace
+	}
+
+	if pc.Spec.TLS != nil {
+		if pc.Spec.TLS.CACertSecretRef != nil {
+			caRef := pc.Spec.TLS.CACertSecretRef
+			caSecret := &corev1.Secret{}
+			if err := kube.Get(ctx, client.ObjectKey{
+				Name:      caRef.Name,
+				Namespace: caRef.Namespace,
+			}, caSecret); err != nil {
+				return nil, errors.Wrap(err, "cannot read CA certificate secret")
+			}
+			cfg.CACertPEM = caSecret.Data[caRef.Key]
+		}
+
+		if pc.Spec.TLS.ClientCertSecretRef != nil {
+			ccRef := pc.Spec.TLS.ClientCertSecretRef
+			ccSecret := &corev1.Secret{}
+			if err := kube.Get(ctx, client.ObjectKey{
+				Name:      ccRef.Name,
+				Namespace: ccRef.Namespace,
+			}, ccSecret); err != nil {
+				return nil, errors.Wrap(err, "cannot read TLS client cert secret")
+			}
+			cfg.ClientCertPEM = ccSecret.Data["tls.crt"]
+			cfg.ClientKeyPEM = ccSecret.Data["tls.key"]
+		}
+	}
+
+	return cfg, nil
+}
+
+func (c *Config) NewClient() (*VaultClient, error) {
+	vc, err := NewVaultClientFromConfig(c.Address, c.Token, c.Insecure, c.CACertPEM, c.ClientCertPEM, c.ClientKeyPEM)
+	if err != nil {
+		return nil, err
+	}
+	vc.vaultNamespace = c.VaultNamespace
+	return vc, nil
 }
 
 func NewClientFromProviderConfig(ctx context.Context, kube client.Client, pc *vaultv1beta1.ProviderConfig) (*VaultClient, error) {
@@ -645,5 +805,5 @@ func NewClientFromProviderConfig(ctx context.Context, kube client.Client, pc *va
 	if err != nil {
 		return nil, err
 	}
-	return NewVaultClientFromConfig(cfg.Address, cfg.Token, cfg.Insecure)
+	return cfg.NewClient()
 }

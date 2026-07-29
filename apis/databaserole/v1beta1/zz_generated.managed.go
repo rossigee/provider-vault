@@ -30,6 +30,10 @@ func (in *DatabaseRole) GetWriteConnectionSecretToReference() *xpv1.LocalSecretR
 	return in.Spec.WriteConnectionSecretToReference
 }
 
+func (in *DatabaseRole) SetWriteConnectionSecretToReference(r *xpv1.LocalSecretReference) {
+	in.Spec.WriteConnectionSecretToReference = r
+}
+
 func (in *DatabaseRole) ConnectionSecretName() string {
 	ref := in.GetWriteConnectionSecretToReference()
 	if ref == nil {

@@ -10,6 +10,7 @@ const AuthMethodKind = "AuthMethod"
 var AuthMethodGroupVersionKind = SchemeGroupVersion.WithKind(AuthMethodKind)
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
@@ -43,6 +44,7 @@ type AuthMethodObservation struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type AuthMethodList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

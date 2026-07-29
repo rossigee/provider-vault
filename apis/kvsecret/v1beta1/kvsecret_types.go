@@ -12,6 +12,7 @@ const (
 var KVSecretGroupVersionKind = SchemeGroupVersion.WithKind(KVSecretKind)
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
@@ -45,6 +46,7 @@ type KVSecretObservation struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type KVSecretList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

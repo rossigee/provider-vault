@@ -22,6 +22,21 @@ type ProviderConfigSpec struct {
 	Credentials        ProviderCredentials  `json:"credentials"`
 	Address            string              `json:"address"`
 	InsecureSkipVerify *bool               `json:"insecureSkipVerify,omitempty"`
+	TLS                *TLSConfig          `json:"tls,omitempty"`
+	// VaultNamespace is an optional Vault Enterprise namespace to use for all
+	// API requests. If set, it will be sent as the X-Vault-Namespace header.
+	VaultNamespace *string `json:"vaultNamespace,omitempty"`
+}
+
+type TLSConfig struct {
+	// CACertSecretRef references a secret key containing the CA certificate
+	// (PEM-encoded) to use when verifying the Vault server's certificate.
+	CACertSecretRef *xpv1.SecretKeySelector `json:"caCertSecretRef,omitempty"`
+	// ClientCertSecretRef references a secret key containing the TLS client
+	// certificate (PEM-encoded) and its corresponding private key for
+	// mutual TLS authentication with Vault. The referenced secret must have
+	// keys "tls.crt" and "tls.key".
+	ClientCertSecretRef *xpv1.SecretKeySelector `json:"clientCertSecretRef,omitempty"`
 }
 
 type ProviderCredentials struct {

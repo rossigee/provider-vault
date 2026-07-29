@@ -30,6 +30,10 @@ func (in *KVSecret) GetWriteConnectionSecretToReference() *xpv1.LocalSecretRefer
 	return in.Spec.WriteConnectionSecretToReference
 }
 
+func (in *KVSecret) SetWriteConnectionSecretToReference(r *xpv1.LocalSecretReference) {
+	in.Spec.WriteConnectionSecretToReference = r
+}
+
 func (in *KVSecret) ConnectionSecretName() string {
 	ref := in.GetWriteConnectionSecretToReference()
 	if ref == nil {

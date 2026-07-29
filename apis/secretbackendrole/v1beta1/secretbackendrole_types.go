@@ -10,6 +10,7 @@ const SecretBackendRoleKind = "SecretBackendRole"
 var SecretBackendRoleGroupVersionKind = SchemeGroupVersion.WithKind(SecretBackendRoleKind)
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
@@ -70,6 +71,7 @@ type SecretBackendRoleObservation struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type SecretBackendRoleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

@@ -30,6 +30,10 @@ func (in *TransitKey) GetWriteConnectionSecretToReference() *xpv1.LocalSecretRef
 	return in.Spec.WriteConnectionSecretToReference
 }
 
+func (in *TransitKey) SetWriteConnectionSecretToReference(r *xpv1.LocalSecretReference) {
+	in.Spec.WriteConnectionSecretToReference = r
+}
+
 func (in *TransitKey) ConnectionSecretName() string {
 	ref := in.GetWriteConnectionSecretToReference()
 	if ref == nil {

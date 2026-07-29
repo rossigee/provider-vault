@@ -10,6 +10,7 @@ const MountKind = "Mount"
 var MountGroupVersionKind = SchemeGroupVersion.WithKind(MountKind)
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
@@ -47,6 +48,7 @@ type MountObservation struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type MountList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

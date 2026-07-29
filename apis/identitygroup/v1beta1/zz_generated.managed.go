@@ -30,6 +30,10 @@ func (in *IdentityGroup) GetWriteConnectionSecretToReference() *xpv1.LocalSecret
 	return in.Spec.WriteConnectionSecretToReference
 }
 
+func (in *IdentityGroup) SetWriteConnectionSecretToReference(r *xpv1.LocalSecretReference) {
+	in.Spec.WriteConnectionSecretToReference = r
+}
+
 func (in *IdentityGroup) ConnectionSecretName() string {
 	ref := in.GetWriteConnectionSecretToReference()
 	if ref == nil {

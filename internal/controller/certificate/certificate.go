@@ -91,7 +91,7 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.Wrap(err, errGetCreds)
 	}
 
-	svc, err := clients.NewVaultClientFromConfig(config.Address, config.Token, config.Insecure)
+	svc, err := config.NewClient()
 	if err != nil {
 		return nil, errors.Wrap(err, errGetCreds)
 	}

@@ -4,6 +4,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	"github.com/rossigee/provider-vault/internal/controller/approlesecretid"
 	"github.com/rossigee/provider-vault/internal/controller/authbackendrole"
 	"github.com/rossigee/provider-vault/internal/controller/authmethod"
 	"github.com/rossigee/provider-vault/internal/controller/certificate"
@@ -11,6 +12,7 @@ import (
 	"github.com/rossigee/provider-vault/internal/controller/databaserole"
 	"github.com/rossigee/provider-vault/internal/controller/identityentity"
 	"github.com/rossigee/provider-vault/internal/controller/identitygroup"
+	"github.com/rossigee/provider-vault/internal/controller/kubernetesauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/kvsecret"
 	"github.com/rossigee/provider-vault/internal/controller/mount"
 	"github.com/rossigee/provider-vault/internal/controller/pkiconfig"
@@ -22,6 +24,7 @@ import (
 
 func Setup(mgr ctrl.Manager, o controller.Options) error {
 	for _, setup := range []func(ctrl.Manager, controller.Options) error{
+		approlesecretid.Setup,
 		kvsecret.Setup,
 		policy.Setup,
 		authmethod.Setup,
@@ -35,6 +38,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		transitkey.Setup,
 		identityentity.Setup,
 		identitygroup.Setup,
+		kubernetesauthconfig.Setup,
 		token.Setup,
 	} {
 		if err := setup(mgr, o); err != nil {

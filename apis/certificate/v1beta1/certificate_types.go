@@ -10,6 +10,7 @@ const CertificateKind = "Certificate"
 var CertificateGroupVersionKind = SchemeGroupVersion.WithKind(CertificateKind)
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
@@ -68,6 +69,7 @@ type CertificateObservation struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type CertificateList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

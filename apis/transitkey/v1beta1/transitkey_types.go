@@ -10,6 +10,7 @@ const TransitKeyKind = "TransitKey"
 var TransitKeyGroupVersionKind = SchemeGroupVersion.WithKind(TransitKeyKind)
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
@@ -54,6 +55,7 @@ type TransitKeyObservation struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type TransitKeyList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

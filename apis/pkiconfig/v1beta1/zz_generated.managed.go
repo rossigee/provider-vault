@@ -30,6 +30,10 @@ func (in *PKIConfig) GetWriteConnectionSecretToReference() *xpv1.LocalSecretRefe
 	return in.Spec.WriteConnectionSecretToReference
 }
 
+func (in *PKIConfig) SetWriteConnectionSecretToReference(r *xpv1.LocalSecretReference) {
+	in.Spec.WriteConnectionSecretToReference = r
+}
+
 func (in *PKIConfig) ConnectionSecretName() string {
 	ref := in.GetWriteConnectionSecretToReference()
 	if ref == nil {

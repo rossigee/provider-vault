@@ -88,8 +88,8 @@ func main() {
 
 func getWatchNamespace() (string, error) {
 	ns, found := os.LookupEnv("WATCH_NAMESPACE")
-	if !found {
-		return "", nil
+	if found && ns != "" {
+		return ns, nil
 	}
-	return ns, nil
+	return "", nil
 }

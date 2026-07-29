@@ -10,6 +10,7 @@ const DatabaseRoleKind = "DatabaseRole"
 var DatabaseRoleGroupVersionKind = SchemeGroupVersion.WithKind(DatabaseRoleKind)
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 // +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
@@ -49,6 +50,7 @@ type DatabaseRoleObservation struct {
 }
 
 // +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
 type DatabaseRoleList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`

@@ -11,7 +11,7 @@ A Crossplane v2 provider for managing HashiCorp Vault resources with complete na
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-vault:v0.2.0`
+- **Primary**: `ghcr.io/rossigee/provider-vault:v0.2.7`
 
 ## Overview
 
@@ -34,6 +34,8 @@ A lightweight Crossplane v2 provider for managing HashiCorp Vault resources, des
 - **Identity Entities**: Manage Vault identity entities with policies and metadata
 - **Identity Groups**: Manage Vault identity groups with member entities
 - **Auth Backend Roles**: Create JWT, AppRole, and Kubernetes auth roles for identity-to-policy mapping
+- **AppRoleSecretID**: Generate and manage AppRole SecretIDs with automatic connection secret publishing
+- **KubernetesAuthConfig**: Configure Kubernetes auth method with configurable token reviewers and TTLs
 - **Token-based Auth**: Authenticate to Vault using periodic tokens via Kubernetes secrets
 - **Custom CA Support**: SSL_CERT_FILE environment variable for internal CA certificates
 - **Namespaced ProviderConfig**: Provider configuration scoped to namespaces for multi-tenant setups
@@ -49,7 +51,7 @@ A lightweight Crossplane v2 provider for managing HashiCorp Vault resources, des
 ### Installation
 
 ```bash
-kubectl crossplane install provider ghcr.io/rossigee/provider-vault:v0.2.0
+kubectl crossplane install provider ghcr.io/rossigee/provider-vault:v0.2.7
 ```
 
 ### Configuration
@@ -194,6 +196,31 @@ spec:
     name: default
 ```
 
+### Generate an AppRole SecretID
+
+```yaml
+apiVersion: approlesecretid.vault.m.crossplane.io/v1beta1
+kind: AppRoleSecretID
+metadata:
+  name: my-app-secretid
+  namespace: production
+spec:
+  forProvider:
+    backend: approle
+    roleName: my-app
+    metadata:
+      created-by: crossplane
+      environment: production
+    cidrList:
+      - "10.0.0.0/8"
+  writeConnectionSecretToRef:
+    name: my-app-secretid
+  providerConfigRef:
+    name: default
+```
+
+The `secret_id` and `secret_id_accessor` are automatically written to the connection secret for use by consuming applications.
+
 ### Create a JWT Auth Role
 
 ```yaml
@@ -287,6 +314,8 @@ The Certificate resource automatically writes the issued certificate, CA chain, 
 | Token | `token.vault.m.crossplane.io/v1beta1` | Token create/renew/revoke with k8s Secret output |
 | IdentityEntity | `identityentity.vault.m.crossplane.io/v1beta1` | Identity entity management |
 | IdentityGroup | `identitygroup.vault.m.crossplane.io/v1beta1` | Identity group management |
+| AppRoleSecretID | `approlesecretid.vault.m.crossplane.io/v1beta1` | AppRole SecretID generation and management |
+| KubernetesAuthConfig | `kubernetesauthconfig.vault.m.crossplane.io/v1beta1` | Kubernetes auth method configuration |
 | ProviderConfig | `vault.m.crossplane.io/v1beta1` | Provider authentication and configuration |
 
 ## Unsupported Vault APIs
@@ -295,9 +324,10 @@ The following Vault APIs are not yet supported by this provider:
 
 - AWS/Azure/GCP secrets engine
 - Database secrets engine (role and credential configuration)
-- AppRole role-id/secret-id management
+- AppRole role-id management
 - JWT/OIDC auth configuration (beyond basic enable)
-- Kubernetes auth configuration
+- AppRoleSecretID management (now supported — see above)
+- Kubernetes auth configuration (now supported)
 - LDAP auth configuration
 - Token create/manage/renew
 - Transit encryption key management
@@ -324,6 +354,9 @@ make lint
 
 # Generate CRDs
 make generate
+
+# Build and publish
+make publish VERSION=v0.2.7 PLATFORMS=linux_amd64
 ```
 
 ## Contributing

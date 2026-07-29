@@ -3,6 +3,7 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
+	approlesecretidv1beta1 "github.com/rossigee/provider-vault/apis/approlesecretid/v1beta1"
 	authbackendrolev1beta1 "github.com/rossigee/provider-vault/apis/authbackendrole/v1beta1"
 	authmethodv1beta1 "github.com/rossigee/provider-vault/apis/authmethod/v1beta1"
 	certificatev1beta1 "github.com/rossigee/provider-vault/apis/certificate/v1beta1"
@@ -10,6 +11,7 @@ import (
 	databaserolev1beta1 "github.com/rossigee/provider-vault/apis/databaserole/v1beta1"
 	identityentityv1beta1 "github.com/rossigee/provider-vault/apis/identityentity/v1beta1"
 	identitygroupv1beta1 "github.com/rossigee/provider-vault/apis/identitygroup/v1beta1"
+	kubernetesauthconfigv1beta1 "github.com/rossigee/provider-vault/apis/kubernetesauthconfig/v1beta1"
 	kvsecretv1beta1 "github.com/rossigee/provider-vault/apis/kvsecret/v1beta1"
 	mountv1beta1 "github.com/rossigee/provider-vault/apis/mount/v1beta1"
 	pkiconfigv1beta1 "github.com/rossigee/provider-vault/apis/pkiconfig/v1beta1"
@@ -64,6 +66,12 @@ func AddToScheme(s *runtime.Scheme) error {
 		return err
 	}
 	if err := tokenv1beta1.AddToScheme(s); err != nil {
+		return err
+	}
+	if err := approlesecretidv1beta1.AddToScheme(s); err != nil {
+		return err
+	}
+	if err := kubernetesauthconfigv1beta1.AddToScheme(s); err != nil {
 		return err
 	}
 	return nil

@@ -30,6 +30,10 @@ func (in *AuthBackendRole) GetWriteConnectionSecretToReference() *xpv1.LocalSecr
 	return in.Spec.WriteConnectionSecretToReference
 }
 
+func (in *AuthBackendRole) SetWriteConnectionSecretToReference(r *xpv1.LocalSecretReference) {
+	in.Spec.WriteConnectionSecretToReference = r
+}
+
 func (in *AuthBackendRole) ConnectionSecretName() string {
 	ref := in.GetWriteConnectionSecretToReference()
 	if ref == nil {

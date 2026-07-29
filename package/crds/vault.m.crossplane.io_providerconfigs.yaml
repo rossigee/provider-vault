@@ -96,6 +96,54 @@ spec:
                 type: object
               insecureSkipVerify:
                 type: boolean
+              tls:
+                properties:
+                  caCertSecretRef:
+                    description: |-
+                      CACertSecretRef references a secret key containing the CA certificate
+                      (PEM-encoded) to use when verifying the Vault server's certificate.
+                    properties:
+                      key:
+                        description: The key to select.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: Namespace of the secret.
+                        type: string
+                    required:
+                    - key
+                    - name
+                    - namespace
+                    type: object
+                  clientCertSecretRef:
+                    description: |-
+                      ClientCertSecretRef references a secret key containing the TLS client
+                      certificate (PEM-encoded) and its corresponding private key for
+                      mutual TLS authentication with Vault. The referenced secret must have
+                      keys "tls.crt" and "tls.key".
+                    properties:
+                      key:
+                        description: The key to select.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: Namespace of the secret.
+                        type: string
+                    required:
+                    - key
+                    - name
+                    - namespace
+                    type: object
+                type: object
+              vaultNamespace:
+                description: |-
+                  VaultNamespace is an optional Vault Enterprise namespace to use for all
+                  API requests. If set, it will be sent as the X-Vault-Namespace header.
+                type: string
             required:
             - address
             - credentials
