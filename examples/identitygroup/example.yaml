@@ -1,0 +1,15 @@
+apiVersion: identitygroup.vault.m.crossplane.io/v1beta1
+kind: IdentityGroup
+metadata:
+  name: platform-team
+  namespace: production
+spec:
+  forProvider:
+    name: platform-team
+    type: internal
+    policies:
+      - platform-admin
+    memberEntityIds:
+      - app-service
+  providerConfigRef:
+    name: default

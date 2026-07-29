@@ -30,6 +30,9 @@ A lightweight Crossplane v2 provider for managing HashiCorp Vault resources, des
 - **Certificate Issuance**: Issue TLS certificates from PKI roles with automatic renewal
 - **Database Roles**: Dynamic database credential roles (PostgreSQL, MySQL, etc.)
 - **Transit Keys**: Encryption key management for transit secret engine
+- **Token Management**: Create, renew, and revoke Vault tokens with automatic renewal
+- **Identity Entities**: Manage Vault identity entities with policies and metadata
+- **Identity Groups**: Manage Vault identity groups with member entities
 - **Auth Backend Roles**: Create JWT, AppRole, and Kubernetes auth roles for identity-to-policy mapping
 - **Token-based Auth**: Authenticate to Vault using periodic tokens via Kubernetes secrets
 - **Custom CA Support**: SSL_CERT_FILE environment variable for internal CA certificates
@@ -280,15 +283,16 @@ The Certificate resource automatically writes the issued certificate, CA chain, 
 | Certificate | `certificate.vault.m.crossplane.io/v1beta1` | PKI certificate issuance with auto-renewal |
 | DatabaseRole | `databaserole.vault.m.crossplane.io/v1beta1` | Dynamic database credential roles |
 | TransitKey | `transitkey.vault.m.crossplane.io/v1beta1` | Encryption key management |
+| Token | `token.vault.m.crossplane.io/v1beta1` | Token create/renew/revoke with k8s Secret output |
+| IdentityEntity | `identityentity.vault.m.crossplane.io/v1beta1` | Identity entity management |
+| IdentityGroup | `identitygroup.vault.m.crossplane.io/v1beta1` | Identity group management |
 | ProviderConfig | `vault.m.crossplane.io/v1beta1` | Provider authentication and configuration |
 
 ## Unsupported Vault APIs
 
 The following Vault APIs are not yet supported by this provider:
 
-- Token/Renew management
 - AWS/Azure/GCP secrets engine
-- Identity entities and groups
 - Database secrets engine (role and credential configuration)
 - AppRole role-id/secret-id management
 - JWT/OIDC auth configuration (beyond basic enable)

@@ -1,0 +1,16 @@
+apiVersion: token.vault.m.crossplane.io/v1beta1
+kind: Token
+metadata:
+  name: app-service-token
+  namespace: production
+spec:
+  forProvider:
+    policies:
+      - app-reader
+    ttl: 72h
+    displayName: app-service-token
+    renewBefore: 0.5
+  writeConnectionSecretToRef:
+    name: vault-token
+  providerConfigRef:
+    name: default

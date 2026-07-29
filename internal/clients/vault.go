@@ -440,6 +440,133 @@ func (c *VaultClient) DeleteTransitKey(ctx context.Context, backend, name string
 	return err
 }
 
+// Token
+
+func (c *VaultClient) CreateToken(ctx context.Context, params map[string]interface{}) (map[string]interface{}, error) {
+	resp, err := c.request(ctx, http.MethodPost, "/v1/auth/token/create", params)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Auth map[string]interface{} `json:"auth"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse create token response")
+	}
+	return result.Auth, nil
+}
+
+func (c *VaultClient) LookupToken(ctx context.Context, accessor string) (map[string]interface{}, error) {
+	resp, err := c.request(ctx, http.MethodPost, "/v1/auth/token/lookup-accessor", map[string]string{
+		"accessor": accessor,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse lookup token response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) RenewToken(ctx context.Context, accessor string, increment int) error {
+	_, err := c.request(ctx, http.MethodPost, "/v1/auth/token/renew-accessor", map[string]interface{}{
+		"accessor":  accessor,
+		"increment": increment,
+	})
+	return err
+}
+
+func (c *VaultClient) RevokeToken(ctx context.Context, accessor string) error {
+	_, err := c.request(ctx, http.MethodPost, "/v1/auth/token/revoke-accessor", map[string]string{
+		"accessor": accessor,
+	})
+	return err
+}
+
+// IdentityEntity
+
+func (c *VaultClient) CreateIdentityEntity(ctx context.Context, params map[string]interface{}) (map[string]interface{}, error) {
+	resp, err := c.request(ctx, http.MethodPost, "/v1/identity/entity", params)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse create entity response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) GetIdentityEntity(ctx context.Context, name string) (map[string]interface{}, error) {
+	resp, err := c.request(ctx, http.MethodGet, "/v1/identity/entity/name/"+name, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse get entity response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) UpdateIdentityEntity(ctx context.Context, name string, params map[string]interface{}) error {
+	_, err := c.request(ctx, http.MethodPost, "/v1/identity/entity/name/"+name, params)
+	return err
+}
+
+func (c *VaultClient) DeleteIdentityEntity(ctx context.Context, name string) error {
+	_, err := c.request(ctx, http.MethodDelete, "/v1/identity/entity/name/"+name, nil)
+	return err
+}
+
+// IdentityGroup
+
+func (c *VaultClient) CreateIdentityGroup(ctx context.Context, params map[string]interface{}) (map[string]interface{}, error) {
+	resp, err := c.request(ctx, http.MethodPost, "/v1/identity/group", params)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse create group response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) GetIdentityGroup(ctx context.Context, name string) (map[string]interface{}, error) {
+	resp, err := c.request(ctx, http.MethodGet, "/v1/identity/group/name/"+name, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse get group response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) UpdateIdentityGroup(ctx context.Context, name string, params map[string]interface{}) error {
+	_, err := c.request(ctx, http.MethodPost, "/v1/identity/group/name/"+name, params)
+	return err
+}
+
+func (c *VaultClient) DeleteIdentityGroup(ctx context.Context, name string) error {
+	_, err := c.request(ctx, http.MethodDelete, "/v1/identity/group/name/"+name, nil)
+	return err
+}
+
 // Helper to read token from k8s secret and create client from ProviderConfig
 
 type Config struct {

@@ -8,11 +8,14 @@ import (
 	"github.com/rossigee/provider-vault/internal/controller/authmethod"
 	"github.com/rossigee/provider-vault/internal/controller/certificate"
 	"github.com/rossigee/provider-vault/internal/controller/databaserole"
+	"github.com/rossigee/provider-vault/internal/controller/identityentity"
+	"github.com/rossigee/provider-vault/internal/controller/identitygroup"
 	"github.com/rossigee/provider-vault/internal/controller/kvsecret"
 	"github.com/rossigee/provider-vault/internal/controller/mount"
 	"github.com/rossigee/provider-vault/internal/controller/pkiconfig"
 	"github.com/rossigee/provider-vault/internal/controller/policy"
 	"github.com/rossigee/provider-vault/internal/controller/secretbackendrole"
+	"github.com/rossigee/provider-vault/internal/controller/token"
 	"github.com/rossigee/provider-vault/internal/controller/transitkey"
 )
 
@@ -28,6 +31,9 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		certificate.Setup,
 		databaserole.Setup,
 		transitkey.Setup,
+		identityentity.Setup,
+		identitygroup.Setup,
+		token.Setup,
 	} {
 		if err := setup(mgr, o); err != nil {
 			return err

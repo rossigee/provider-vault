@@ -1,0 +1,15 @@
+apiVersion: identityentity.vault.m.crossplane.io/v1beta1
+kind: IdentityEntity
+metadata:
+  name: app-service
+  namespace: production
+spec:
+  forProvider:
+    name: app-service
+    policies:
+      - app-reader
+    metadata:
+      team: platform
+      environment: production
+  providerConfigRef:
+    name: default
