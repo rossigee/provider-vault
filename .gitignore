@@ -5,3 +5,4 @@ bin/
 coverage*.out
 .DS_Store
 provider
+.cache/

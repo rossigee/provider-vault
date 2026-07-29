@@ -1,0 +1,16 @@
+apiVersion: mount.vault.m.crossplane.io/v1beta1
+kind: Mount
+metadata:
+  name: kv-secrets
+  namespace: vault
+spec:
+  forProvider:
+    path: kv
+    type: kv-v2
+    description: Key-Value secrets engine for application configurations
+    options:
+      version: "2"
+    defaultLeaseTtl: 3600
+    maxLeaseTtl: 86400
+  providerConfigRef:
+    name: default

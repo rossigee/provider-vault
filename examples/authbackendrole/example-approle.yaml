@@ -1,0 +1,18 @@
+apiVersion: authbackendrole.vault.m.crossplane.io/v1beta1
+kind: AuthBackendRole
+metadata:
+  name: approle-cert-manager
+  namespace: vault
+spec:
+  forProvider:
+    backend: approle
+    roleName: cert-manager
+    tokenPolicies:
+    - k8s-cert-manager
+    - default
+    tokenTtl: 3600
+    tokenMaxTtl: 14400
+    secretIdTtl: 0
+    secretIdNumUses: 0
+  providerConfigRef:
+    name: default

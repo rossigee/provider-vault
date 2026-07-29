@@ -13,6 +13,7 @@ var KVSecretGroupVersionKind = SchemeGroupVersion.WithKind(KVSecretKind)
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
 // +genclient:namespaced
 // +groupName=kvsecret.vault.m.crossplane.io

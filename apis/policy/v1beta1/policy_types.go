@@ -11,6 +11,7 @@ var PolicyGroupVersionKind = SchemeGroupVersion.WithKind(PolicyKind)
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
 // +genclient:namespaced
 // +groupName=policy.vault.m.crossplane.io

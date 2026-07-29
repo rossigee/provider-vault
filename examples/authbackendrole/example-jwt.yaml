@@ -1,0 +1,21 @@
+apiVersion: authbackendrole.vault.m.crossplane.io/v1beta1
+kind: AuthBackendRole
+metadata:
+  name: jwt-golder-production-flux-system
+  namespace: vault
+spec:
+  forProvider:
+    backend: jwt-golder-production
+    roleName: flux-system
+    roleType: jwt
+    boundAudiences:
+    - https://k8s-api.master.golder.lan
+    boundSubject: "system:serviceaccount:flux-system:external-secrets"
+    userClaim: sub
+    tokenPolicies:
+    - default
+    - external-secrets-golder-production
+    tokenTtl: 3600
+    tokenMaxTtl: 3600
+  providerConfigRef:
+    name: default

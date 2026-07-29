@@ -7,6 +7,7 @@ import (
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
 // +genclient:namespaced
 // +groupName=vault.m.crossplane.io
@@ -34,6 +35,7 @@ type ProviderConfigStatus struct {
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
 // +genclient:namespaced
 type ProviderConfigUsage struct {

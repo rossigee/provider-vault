@@ -8,7 +8,7 @@ import (
 
 var (
 	SchemeGroupVersion = schema.GroupVersion{
-		Group:   "kvsecret.vault.m.crossplane.io",
+		Group:   "mount.vault.m.crossplane.io",
 		Version: "v1beta1",
 	}
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
@@ -17,8 +17,8 @@ var (
 
 func addKnownTypes(s *runtime.Scheme) error {
 	s.AddKnownTypes(SchemeGroupVersion,
-		&KVSecret{},
-		&KVSecretList{},
+		&Mount{},
+		&MountList{},
 	)
 	metav1.AddToGroupVersion(s, SchemeGroupVersion)
 	return nil

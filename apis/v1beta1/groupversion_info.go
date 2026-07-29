@@ -1,8 +1,9 @@
 package v1beta1
 
 import (
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"sigs.k8s.io/controller-runtime/pkg/scheme"
 )
 
 var (
@@ -10,6 +11,17 @@ var (
 		Group:   "vault.m.crossplane.io",
 		Version: "v1beta1",
 	}
-	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 	AddToScheme   = SchemeBuilder.AddToScheme
 )
+
+func addKnownTypes(s *runtime.Scheme) error {
+	s.AddKnownTypes(SchemeGroupVersion,
+		&ProviderConfig{},
+		&ProviderConfigList{},
+		&ProviderConfigUsage{},
+		&ProviderConfigUsageList{},
+	)
+	metav1.AddToGroupVersion(s, SchemeGroupVersion)
+	return nil
+}

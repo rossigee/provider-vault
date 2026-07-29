@@ -184,6 +184,108 @@ func (c *VaultClient) DisableAuthMethod(ctx context.Context, mountPath string) e
 	return err
 }
 
+// Mount
+
+func (c *VaultClient) EnableMount(ctx context.Context, path, engineType, description string, defaultLeaseTTL, maxLeaseTTL int, options map[string]string, config map[string]string) error {
+	body := map[string]interface{}{
+		"type": engineType,
+	}
+	if description != "" {
+		body["description"] = description
+	}
+	if defaultLeaseTTL > 0 {
+		body["default_lease_ttl"] = defaultLeaseTTL
+	}
+	if maxLeaseTTL > 0 {
+		body["max_lease_ttl"] = maxLeaseTTL
+	}
+	if len(options) > 0 {
+		body["options"] = options
+	}
+	if len(config) > 0 {
+		body["config"] = config
+	}
+	_, err := c.request(ctx, http.MethodPost, "/v1/sys/mounts/"+path, body)
+	return err
+}
+
+func (c *VaultClient) GetMount(ctx context.Context, path string) (map[string]interface{}, error) {
+	resp, err := c.request(ctx, http.MethodGet, "/v1/sys/mounts/"+path, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse mount response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) DisableMount(ctx context.Context, path string) error {
+	_, err := c.request(ctx, http.MethodDelete, "/v1/sys/mounts/"+path, nil)
+	return err
+}
+
+// SecretBackendRole
+
+func (c *VaultClient) CreateSecretBackendRole(ctx context.Context, backend, name string, params map[string]interface{}) error {
+	apiPath := fmt.Sprintf("/v1/%s/roles/%s", backend, name)
+	_, err := c.request(ctx, http.MethodPost, apiPath, params)
+	return err
+}
+
+func (c *VaultClient) GetSecretBackendRole(ctx context.Context, backend, name string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/%s/roles/%s", backend, name)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse secret backend role response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) DeleteSecretBackendRole(ctx context.Context, backend, name string) error {
+	apiPath := fmt.Sprintf("/v1/%s/roles/%s", backend, name)
+	_, err := c.request(ctx, http.MethodDelete, apiPath, nil)
+	return err
+}
+
+// AuthBackendRole
+
+func (c *VaultClient) CreateAuthBackendRole(ctx context.Context, backend, roleName string, params map[string]interface{}) error {
+	apiPath := fmt.Sprintf("/v1/auth/%s/role/%s", backend, roleName)
+	_, err := c.request(ctx, http.MethodPost, apiPath, params)
+	return err
+}
+
+func (c *VaultClient) GetAuthBackendRole(ctx context.Context, backend, roleName string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/auth/%s/role/%s", backend, roleName)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse auth backend role response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) DeleteAuthBackendRole(ctx context.Context, backend, roleName string) error {
+	apiPath := fmt.Sprintf("/v1/auth/%s/role/%s", backend, roleName)
+	_, err := c.request(ctx, http.MethodDelete, apiPath, nil)
+	return err
+}
+
 // Helper to read token from k8s secret and create client from ProviderConfig
 
 type Config struct {

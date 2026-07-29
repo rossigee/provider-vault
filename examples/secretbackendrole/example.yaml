@@ -1,0 +1,32 @@
+apiVersion: secretbackendrole.vault.m.crossplane.io/v1beta1
+kind: SecretBackendRole
+metadata:
+  name: cert-manager-ecdsa
+  namespace: vault
+spec:
+  forProvider:
+    backend: pki-production-ecdsa
+    name: cert-manager
+    allowedDomains:
+    - "*.svc.cluster.local"
+    - svc.cluster.local
+    - "*.golder.lan"
+    - golder.lan
+    allowSubdomains: true
+    allowBareDomains: true
+    allowGlobDomains: true
+    allowAnyName: true
+    keyType: ec
+    keyBits: 384
+    signatureBits: 384
+    ttl: 86400
+    maxTtl: 604800
+    generateLease: false
+    enforceHostnames: true
+    allowIpSans: true
+    allowLocalhostFlag: true
+    allowWildcardCertificates: true
+    serverFlag: true
+    clientFlag: true
+  providerConfigRef:
+    name: default

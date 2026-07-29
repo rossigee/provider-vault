@@ -11,6 +11,7 @@ var AuthMethodGroupVersionKind = SchemeGroupVersion.WithKind(AuthMethodKind)
 
 // +kubebuilder:object:root=true
 // +kubebuilder:storageversion
+// +kubebuilder:resource:scope=Namespaced,categories={crossplane,managed,vault}
 // +genclient
 // +genclient:namespaced
 // +groupName=authmethod.vault.m.crossplane.io
