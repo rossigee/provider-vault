@@ -286,6 +286,102 @@ func (c *VaultClient) DeleteAuthBackendRole(ctx context.Context, backend, roleNa
 	return err
 }
 
+// PKIConfig
+
+func (c *VaultClient) GenerateRootCA(ctx context.Context, backend, exportType, commonName, ttl string, params map[string]interface{}) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/%s/root/generate/%s", backend, exportType)
+	req := map[string]interface{}{
+		"common_name": commonName,
+	}
+	if ttl != "" {
+		req["ttl"] = ttl
+	}
+	for k, v := range params {
+		req[k] = v
+	}
+	resp, err := c.request(ctx, http.MethodPost, apiPath, req)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse root CA response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) GetPKICA(ctx context.Context, backend string) (string, error) {
+	resp, err := c.request(ctx, http.MethodGet, "/v1/"+backend+"/ca/pem", nil)
+	if err != nil {
+		return "", err
+	}
+	return string(resp), nil
+}
+
+func (c *VaultClient) GetPKICert(ctx context.Context, backend, serial string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/%s/cert/%s", backend, serial)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse PKI cert response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) ConfigurePKIURLs(ctx context.Context, backend string, issuingCerts, crlDps, ocspServers []string) error {
+	apiPath := fmt.Sprintf("/v1/%s/config/urls", backend)
+	req := make(map[string]interface{})
+	if len(issuingCerts) > 0 {
+		req["issuing_certificates"] = issuingCerts
+	}
+	if len(crlDps) > 0 {
+		req["crl_distribution_points"] = crlDps
+	}
+	if len(ocspServers) > 0 {
+		req["ocsp_servers"] = ocspServers
+	}
+	_, err := c.request(ctx, http.MethodPost, apiPath, req)
+	return err
+}
+
+// Certificate
+
+func (c *VaultClient) IssueCertificate(ctx context.Context, backend, role, commonName string, params map[string]interface{}) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/%s/issue/%s", backend, role)
+	req := map[string]interface{}{
+		"common_name": commonName,
+	}
+	for k, v := range params {
+		req[k] = v
+	}
+	resp, err := c.request(ctx, http.MethodPost, apiPath, req)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse issue certificate response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) RevokeCertificate(ctx context.Context, backend, serial string) error {
+	apiPath := fmt.Sprintf("/v1/%s/revoke", backend)
+	_, err := c.request(ctx, http.MethodPost, apiPath, map[string]string{
+		"serial_number": serial,
+	})
+	return err
+}
+
 // Helper to read token from k8s secret and create client from ProviderConfig
 
 type Config struct {

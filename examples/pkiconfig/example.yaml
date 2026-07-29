@@ -1,0 +1,24 @@
+apiVersion: pkiconfig.vault.m.crossplane.io/v1beta1
+kind: PKIConfig
+metadata:
+  name: pki-production-ecdsa
+  namespace: vault
+spec:
+  forProvider:
+    backend: pki-production-ecdsa
+    type: root_internal
+    commonName: Golder Production ECDSA Root CA
+    ttl: 87600h
+    keyType: ec
+    keyBits: 384
+    organization:
+      - Golder
+    permittedDnsDomains:
+      - golder.lan
+      - svc.cluster.local
+    issuingCertificates:
+      - https://vault.golder.lan/v1/pki-production-ecdsa/ca
+    crlDistributionPoints:
+      - https://vault.golder.lan/v1/pki-production-ecdsa/crl
+  providerConfigRef:
+    name: default

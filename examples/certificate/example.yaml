@@ -1,0 +1,23 @@
+apiVersion: certificate.vault.m.crossplane.io/v1beta1
+kind: Certificate
+metadata:
+  name: myapp-cert
+  namespace: production
+spec:
+  forProvider:
+    backend: pki-production-ecdsa
+    role: cert-manager
+    commonName: app.production.golder.lan
+    altNames:
+      - app.production.golder.lan
+      - app.svc.cluster.local
+    ipSans:
+      - 10.0.1.100
+    ttl: 2160h
+    format: pem
+    privateKeyFormat: pkcs8
+    renewBefore: 0.33
+  writeConnectionSecretToRef:
+    name: myapp-tls
+  providerConfigRef:
+    name: default

@@ -26,6 +26,8 @@ A lightweight Crossplane v2 provider for managing HashiCorp Vault resources, des
 - **Auth Methods**: Enable, configure, tune, and disable auth methods
 - **Secret Engine Mounts**: Enable and configure secret engines (KV v2, PKI, etc.)
 - **PKI Roles**: Configure certificate roles for PKI secret engines
+- **PKI Config**: Generate root CA certificates for PKI secret engines
+- **Certificate Issuance**: Issue TLS certificates from PKI roles with automatic renewal
 - **Auth Backend Roles**: Create JWT, AppRole, and Kubernetes auth roles for identity-to-policy mapping
 - **Token-based Auth**: Authenticate to Vault using periodic tokens via Kubernetes secrets
 - **Custom CA Support**: SSL_CERT_FILE environment variable for internal CA certificates
@@ -213,6 +215,55 @@ spec:
     name: default
 ```
 
+### Generate a PKI Root CA
+
+```yaml
+apiVersion: pkiconfig.vault.m.crossplane.io/v1beta1
+kind: PKIConfig
+metadata:
+  name: pki-production-ecdsa
+  namespace: vault
+spec:
+  forProvider:
+    backend: pki-production-ecdsa
+    type: root_internal
+    commonName: Production ECDSA Root CA
+    ttl: 87600h
+    keyType: ec
+    keyBits: 384
+    organization:
+      - MyOrg
+    issuingCertificates:
+      - https://vault.example.com/v1/pki-production-ecdsa/ca
+  providerConfigRef:
+    name: default
+```
+
+### Issue a Certificate
+
+```yaml
+apiVersion: certificate.vault.m.crossplane.io/v1beta1
+kind: Certificate
+metadata:
+  name: myapp-cert
+  namespace: production
+spec:
+  forProvider:
+    backend: pki-production-ecdsa
+    role: cert-manager
+    commonName: app.production.example.com
+    altNames:
+      - app.production.example.com
+    ttl: 2160h
+    renewBefore: 0.33
+  writeConnectionSecretToRef:
+    name: myapp-tls
+  providerConfigRef:
+    name: default
+```
+
+The Certificate resource automatically writes the issued certificate, CA chain, and private key to a Kubernetes Secret (specified via `writeConnectionSecretToRef`). The secret contains `tls.crt`, `ca.crt`, and `tls.key` keys.
+
 ## Resource Types
 
 | Resource | API Version | Description |
@@ -223,13 +274,17 @@ spec:
 | Mount | `mount.vault.m.crossplane.io/v1beta1` | Secret engine mount enable/tune/disable |
 | SecretBackendRole | `secretbackendrole.vault.m.crossplane.io/v1beta1` | PKI certificate role configuration |
 | AuthBackendRole | `authbackendrole.vault.m.crossplane.io/v1beta1` | JWT/AppRole/Kubernetes auth role management |
+| PKIConfig | `pkiconfig.vault.m.crossplane.io/v1beta1` | PKI root CA generation and URL configuration |
+| Certificate | `certificate.vault.m.crossplane.io/v1beta1` | PKI certificate issuance with auto-renewal |
 | ProviderConfig | `vault.m.crossplane.io/v1beta1` | Provider authentication and configuration |
 
 ## Unsupported Vault APIs
 
 The following Vault APIs are not yet supported by this provider:
 
-- PKI CA management (root/intermediate certificate generation)
+- Database secret engine roles
+- Transit encryption key management
+- Token/Renew management
 - Database secrets engine (role and credential configuration)
 - AppRole role-id/secret-id management
 - JWT/OIDC auth configuration (beyond basic enable)
