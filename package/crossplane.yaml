@@ -1,0 +1,41 @@
+apiVersion: meta.pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-vault
+  annotations:
+    meta.crossplane.io/maintainer: rossigee
+    meta.crossplane.io/source: github.com/rossigee/provider-vault
+    meta.crossplane.io/license: Apache-2.0
+    meta.crossplane.io/description: |
+      Crossplane v2 provider for managing HashiCorp Vault resources with namespace-scoped resources.
+      Includes KV secrets, policies, and auth methods.
+    meta.crossplane.io/readme: |
+      This Crossplane v2 provider enables namespace-scoped management of HashiCorp Vault resources
+      through Kubernetes manifests.
+
+      Features:
+      - Namespace-scoped resources for multi-tenancy and isolation
+      - KV v2 secret management (create, read, update, delete)
+      - Policy management (create, read, update, delete)
+      - Auth method management (enable, read, tune, disable)
+      - Token-based authentication to Vault
+spec:
+  permissionRequests:
+    - apiGroups: ["kvsecret.vault.m.crossplane.io"]
+      resources: ["kvsecrets"]
+      verbs: ["*"]
+    - apiGroups: ["policy.vault.m.crossplane.io"]
+      resources: ["policies"]
+      verbs: ["*"]
+    - apiGroups: ["authmethod.vault.m.crossplane.io"]
+      resources: ["authmethods"]
+      verbs: ["*"]
+    - apiGroups: ["vault.m.crossplane.io"]
+      resources: ["providerconfigs", "providerconfigusages"]
+      verbs: ["*"]
+    - apiGroups: [""]
+      resources: ["secrets"]
+      verbs: ["get", "list", "watch"]
+  controller: {}
+  crossplane:
+    version: ">=v1.14.0"
