@@ -18,13 +18,16 @@ type ProviderConfig struct {
 }
 
 type ProviderConfigSpec struct {
-	xpv1.ProviderConfigSpec `json:",inline"`
-	Address                 string              `json:"address"`
-	TokenSecretRef          xpv1.SecretReference `json:"tokenSecretRef"`
-	InsecureSkipVerify      *bool               `json:"insecureSkipVerify,omitempty"`
+	Credentials        ProviderCredentials  `json:"credentials"`
+	Address            string              `json:"address"`
+	InsecureSkipVerify *bool               `json:"insecureSkipVerify,omitempty"`
 }
 
-// +kubebuilder:object:root=true
+type ProviderCredentials struct {
+	Source xpv1.CredentialsSource `json:"source"`
+	xpv1.CommonCredentialSelectors `json:",inline"`
+}
+
 type ProviderConfigStatus struct {
 	xpv1.ProviderConfigStatus `json:",inline"`
 }
@@ -36,13 +39,19 @@ type ProviderConfigStatus struct {
 type ProviderConfigUsage struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
-	Spec              ProviderConfigUsageSpec `json:"spec"`
+	xpv1.ProviderConfigUsage `json:",inline"`
 }
 
-type ProviderConfigUsageSpec struct {
-	xpv1.ProviderConfigUsageSpec `json:",inline"`
+// +kubebuilder:object:root=true
+type ProviderConfigUsageList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []ProviderConfigUsage `json:"items"`
 }
 
-func (p *ProviderConfig) GetProviderConfigSpec() xpv1.ProviderConfigSpec {
-	return p.Spec.ProviderConfigSpec
+// +kubebuilder:object:root=true
+type ProviderConfigList struct {
+	metav1.TypeMeta `json:",inline"`
+	metav1.ListMeta `json:"metadata,omitempty"`
+	Items           []ProviderConfig `json:"items"`
 }

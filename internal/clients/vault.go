@@ -27,13 +27,6 @@ type VaultClient struct {
 	token      string
 }
 
-func NewClient(ctx context.Context, kube client.Client, mg xpv1.ManagedResource) (*VaultClient, error) {
-	// In a real Crossplane provider, the connector pattern extracts
-	// ProviderConfig and reads the token from the referenced Secret.
-	// This is a stub - the actual connector in the controller handles this.
-	panic("implemented via connector pattern")
-}
-
 func NewVaultClientFromConfig(baseURL string, token string, tlsInsecure bool) (*VaultClient, error) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
@@ -43,7 +36,6 @@ func NewVaultClientFromConfig(baseURL string, token string, tlsInsecure bool) (*
 		baseURL: u,
 		httpClient: &http.Client{
 			Transport: &http.Transport{
-				// TLS config is minimal - SSL_CERT_FILE env handles CA trust
 				TLSClientConfig: nil,
 			},
 		},
@@ -194,21 +186,34 @@ func (c *VaultClient) DisableAuthMethod(ctx context.Context, mountPath string) e
 
 // Helper to read token from k8s secret and create client from ProviderConfig
 
-func NewClientFromProviderConfig(ctx context.Context, kube client.Client, pc *vaultv1beta1.ProviderConfig) (*VaultClient, error) {
+type Config struct {
+	Address  string
+	Token    string
+	Insecure bool
+}
+
+func GetConfig(ctx context.Context, kube client.Client, pc *vaultv1beta1.ProviderConfig) (*Config, error) {
+	if pc.Spec.Credentials.Source != xpv1.CredentialsSourceSecret {
+		return nil, fmt.Errorf("unsupported credentials source: %s", pc.Spec.Credentials.Source)
+	}
+	if pc.Spec.Credentials.SecretRef == nil {
+		return nil, fmt.Errorf("secretRef is required when credentials source is Secret")
+	}
+
 	secret := &corev1.Secret{}
 	if err := kube.Get(ctx, client.ObjectKey{
-		Name:      pc.Spec.TokenSecretRef.Name,
-		Namespace: pc.Spec.TokenSecretRef.Namespace,
+		Name:      pc.Spec.Credentials.SecretRef.Name,
+		Namespace: pc.Spec.Credentials.SecretRef.Namespace,
 	}, secret); err != nil {
 		return nil, errors.Wrap(err, "cannot read vault token secret")
 	}
 
-	token, ok := secret.Data[pc.Spec.TokenSecretRef.Key]
+	token, ok := secret.Data[pc.Spec.Credentials.SecretRef.Key]
 	if !ok {
 		return nil, fmt.Errorf("secret %s/%s missing key %s",
-			pc.Spec.TokenSecretRef.Namespace,
-			pc.Spec.TokenSecretRef.Name,
-			pc.Spec.TokenSecretRef.Key)
+			pc.Spec.Credentials.SecretRef.Namespace,
+			pc.Spec.Credentials.SecretRef.Name,
+			pc.Spec.Credentials.SecretRef.Key)
 	}
 
 	insecure := false
@@ -216,5 +221,17 @@ func NewClientFromProviderConfig(ctx context.Context, kube client.Client, pc *va
 		insecure = *pc.Spec.InsecureSkipVerify
 	}
 
-	return NewVaultClientFromConfig(pc.Spec.Address, string(token), insecure)
+	return &Config{
+		Address:  pc.Spec.Address,
+		Token:    string(token),
+		Insecure: insecure,
+	}, nil
+}
+
+func NewClientFromProviderConfig(ctx context.Context, kube client.Client, pc *vaultv1beta1.ProviderConfig) (*VaultClient, error) {
+	cfg, err := GetConfig(ctx, kube, pc)
+	if err != nil {
+		return nil, err
+	}
+	return NewVaultClientFromConfig(cfg.Address, cfg.Token, cfg.Insecure)
 }

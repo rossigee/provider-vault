@@ -32,8 +32,8 @@ type PolicyParameters struct {
 }
 
 type PolicyStatus struct {
-	xpv1.ManagedResourceStatus `json:",inline"`
-	AtProvider                 PolicyObservation `json:"atProvider,omitempty"`
+	xpv1.ConditionedStatus `json:",inline"`
+	AtProvider             PolicyObservation `json:"atProvider,omitempty"`
 }
 
 type PolicyObservation struct {

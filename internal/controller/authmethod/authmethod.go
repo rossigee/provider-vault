@@ -3,14 +3,12 @@ package authmethod
 import (
 	"context"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
-	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 
@@ -23,6 +21,7 @@ import (
 const (
 	errNotAuthMethod    = "managed resource is not an AuthMethod custom resource"
 	errTrackPCUsage     = "cannot track ProviderConfig usage"
+	errGetPC            = "cannot get ProviderConfig"
 	errGetCreds         = "cannot get credentials"
 	errCreateAuthMethod = "cannot create Vault auth method"
 	errDeleteAuthMethod = "cannot delete Vault auth method"
@@ -60,21 +59,50 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.New(errNotAuthMethod)
 	}
 
-	pc := &vaultv1beta1.ProviderConfig{}
-	if err := c.kube.Get(ctx, client.ObjectKey{Name: cr.GetProviderConfigRef().Name, Namespace: cr.GetNamespace()}, pc); err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
+	if err := c.usage.Track(ctx, mg); err != nil {
+		return nil, errors.Wrap(err, errTrackPCUsage)
 	}
 
-	vaultClient, err := clients.NewClientFromProviderConfig(ctx, c.kube, pc)
+	pc := &vaultv1beta1.ProviderConfig{}
+	pcRef := cr.GetProviderConfigReference()
+
+	pcName := "default"
+	if pcRef != nil && pcRef.Name != "" {
+		pcName = pcRef.Name
+	}
+
+	pcErr := c.kube.Get(ctx, types.NamespacedName{Name: pcName, Namespace: "crossplane-system"}, pc)
+	if pcErr != nil {
+		pcNamespace := cr.GetNamespace()
+		if pcNamespace != "crossplane-system" {
+			fallbackErr := c.kube.Get(ctx, types.NamespacedName{Name: pcName, Namespace: pcNamespace}, pc)
+			if fallbackErr != nil {
+				return nil, errors.Wrapf(pcErr, "cannot get ProviderConfig '%s'", pcName)
+			}
+		} else {
+			return nil, errors.Wrapf(pcErr, "cannot get ProviderConfig '%s'", pcName)
+		}
+	}
+
+	config, err := clients.GetConfig(ctx, c.kube, pc)
 	if err != nil {
 		return nil, errors.Wrap(err, errGetCreds)
 	}
 
-	return &external{service: vaultClient}, nil
+	svc, err := clients.NewVaultClientFromConfig(config.Address, config.Token, config.Insecure)
+	if err != nil {
+		return nil, errors.Wrap(err, errGetCreds)
+	}
+
+	return &external{service: svc}, nil
 }
 
 type external struct {
 	service *clients.VaultClient
+}
+
+func (c *external) Disconnect(ctx context.Context) error {
+	return nil
 }
 
 func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) {
@@ -117,10 +145,13 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	return managed.ExternalUpdate{}, nil
 }
 
-func (e *external) Delete(ctx context.Context, mg resource.Managed) error {
+func (e *external) Delete(ctx context.Context, mg resource.Managed) (managed.ExternalDelete, error) {
 	cr, ok := mg.(*v1beta1.AuthMethod)
 	if !ok {
-		return errors.New(errNotAuthMethod)
+		return managed.ExternalDelete{}, errors.New(errNotAuthMethod)
 	}
-	return errors.Wrap(e.service.DisableAuthMethod(ctx, cr.Spec.ForProvider.MountPath), errDeleteAuthMethod)
+	if err := e.service.DisableAuthMethod(ctx, cr.Spec.ForProvider.MountPath); err != nil {
+		return managed.ExternalDelete{}, errors.Wrap(err, errDeleteAuthMethod)
+	}
+	return managed.ExternalDelete{}, nil
 }

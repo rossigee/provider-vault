@@ -33,8 +33,8 @@ type AuthMethodParameters struct {
 }
 
 type AuthMethodStatus struct {
-	xpv1.ManagedResourceStatus `json:",inline"`
-	AtProvider                 AuthMethodObservation `json:"atProvider,omitempty"`
+	xpv1.ConditionedStatus `json:",inline"`
+	AtProvider             AuthMethodObservation `json:"atProvider,omitempty"`
 }
 
 type AuthMethodObservation struct {

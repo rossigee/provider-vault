@@ -35,8 +35,8 @@ type KVSecretParameters struct {
 }
 
 type KVSecretStatus struct {
-	xpv1.ManagedResourceStatus `json:",inline"`
-	AtProvider                 KVSecretObservation `json:"atProvider,omitempty"`
+	xpv1.ConditionedStatus `json:",inline"`
+	AtProvider             KVSecretObservation `json:"atProvider,omitempty"`
 }
 
 type KVSecretObservation struct {
