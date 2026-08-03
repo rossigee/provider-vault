@@ -57,6 +57,11 @@ func main() {
 	namespace, err := getWatchNamespace()
 	kingpin.FatalIfError(err, "Cannot get watch namespace")
 
+	cacheOpts := cache.Options{}
+	if namespace != "" {
+		cacheOpts.DefaultNamespaces = map[string]cache.Config{namespace: {}}
+	}
+
 	mgr, err := ctrl.NewManager(cfg, ctrl.Options{
 		LeaderElection:                *leaderElection,
 		LeaderElectionID:              "crossplane-leader-election-provider-vault",
@@ -65,7 +70,7 @@ func main() {
 		Metrics: server.Options{
 			BindAddress: ":8080",
 		},
-		Cache: cache.Options{DefaultNamespaces: map[string]cache.Config{namespace: {}}},
+		Cache: cacheOpts,
 	})
 	kingpin.FatalIfError(err, "Cannot create controller manager")
 

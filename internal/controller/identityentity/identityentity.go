@@ -2,9 +2,9 @@ package identityentity
 
 import (
 	"context"
+	"reflect"
 
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -14,7 +14,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/identityentity/v1beta1"
-	vaultv1beta1 "github.com/rossigee/provider-vault/apis/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
 	"github.com/rossigee/provider-vault/internal/recorder"
 )
@@ -36,7 +35,6 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		resource.ManagedKind(v1beta1.IdentityEntityGroupVersionKind),
 		managed.WithExternalConnector(&connector{
 			kube:  mgr.GetClient(),
-			usage: resource.TrackerFn(func(ctx context.Context, mg resource.Managed) error { return nil }),
 		}),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithPollInterval(o.PollInterval),
@@ -51,8 +49,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 }
 
 type connector struct {
-	kube  client.Client
-	usage resource.TrackerFn
+	kube client.Client
 }
 
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -61,39 +58,13 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.New(errNotIdentityEntity)
 	}
 
-	if err := c.usage.Track(ctx, mg); err != nil {
+	if err := clients.TrackUsage(ctx, c.kube, cr); err != nil {
 		return nil, errors.Wrap(err, errTrackPCUsage)
 	}
 
-	pc := &vaultv1beta1.ProviderConfig{}
-	pcRef := cr.GetProviderConfigReference()
-
-	pcName := "default"
-	if pcRef != nil && pcRef.Name != "" {
-		pcName = pcRef.Name
-	}
-
-	pcErr := c.kube.Get(ctx, types.NamespacedName{Name: pcName, Namespace: "crossplane-system"}, pc)
-	if pcErr != nil {
-		pcNamespace := cr.GetNamespace()
-		if pcNamespace != "crossplane-system" {
-			fallbackErr := c.kube.Get(ctx, types.NamespacedName{Name: pcName, Namespace: pcNamespace}, pc)
-			if fallbackErr != nil {
-				return nil, errors.Wrapf(pcErr, "cannot get ProviderConfig '%s'", pcName)
-			}
-		} else {
-			return nil, errors.Wrapf(pcErr, "cannot get ProviderConfig '%s'", pcName)
-		}
-	}
-
-	config, err := clients.GetConfig(ctx, c.kube, pc)
+	svc, err := clients.Connect(ctx, c.kube, cr)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
-	}
-
-	svc, err := config.NewClient()
-	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
+		return nil, err
 	}
 
 	return &external{service: svc, kube: c.kube}, nil
@@ -116,7 +87,10 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	data, err := e.service.GetIdentityEntity(ctx, cr.Spec.ForProvider.Name)
 	if err != nil {
-		return managed.ExternalObservation{ResourceExists: false}, nil
+		if clients.IsNotFound(err) {
+			return managed.ExternalObservation{ResourceExists: false}, nil
+		}
+		return managed.ExternalObservation{}, err
 	}
 
 	_ = data
@@ -128,10 +102,53 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		cr.Status.AtProvider.CanonicalID = cid
 	}
 
+	p := cr.Spec.ForProvider
+	upToDate := true
+
+	if p.Disabled != nil {
+		if b, ok := data["disabled"].(bool); ok && b != *p.Disabled {
+			upToDate = false
+		}
+	}
+	if len(p.Policies) > 0 {
+		if observed, ok := data["policies"].([]interface{}); ok {
+			if !reflect.DeepEqual(specToStringSlice(observed), p.Policies) {
+				upToDate = false
+			}
+		}
+	}
+	if len(p.Metadata) > 0 {
+		if observed, ok := data["metadata"].(map[string]interface{}); ok {
+			if !reflect.DeepEqual(interfaceToStringMap(observed), p.Metadata) {
+				upToDate = false
+			}
+		}
+	}
+
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: true,
+		ResourceUpToDate: upToDate,
 	}, nil
+}
+
+func specToStringSlice(in []interface{}) []string {
+	out := make([]string, 0, len(in))
+	for _, v := range in {
+		if s, ok := v.(string); ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func interfaceToStringMap(in map[string]interface{}) map[string]string {
+	out := make(map[string]string, len(in))
+	for k, v := range in {
+		if s, ok := v.(string); ok {
+			out[k] = s
+		}
+	}
+	return out
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {

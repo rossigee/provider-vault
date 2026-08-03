@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/certificate/v1beta1"
-	vaultv1beta1 "github.com/rossigee/provider-vault/apis/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
 	"github.com/rossigee/provider-vault/internal/recorder"
 )
@@ -36,7 +34,6 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		resource.ManagedKind(v1beta1.CertificateGroupVersionKind),
 		managed.WithExternalConnector(&connector{
 			kube:  mgr.GetClient(),
-			usage: resource.TrackerFn(func(ctx context.Context, mg resource.Managed) error { return nil }),
 		}),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithPollInterval(o.PollInterval),
@@ -51,8 +48,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 }
 
 type connector struct {
-	kube  client.Client
-	usage resource.TrackerFn
+	kube client.Client
 }
 
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -61,39 +57,13 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.New(errNotCertificate)
 	}
 
-	if err := c.usage.Track(ctx, mg); err != nil {
+	if err := clients.TrackUsage(ctx, c.kube, cr); err != nil {
 		return nil, errors.Wrap(err, errTrackPCUsage)
 	}
 
-	pc := &vaultv1beta1.ProviderConfig{}
-	pcRef := cr.GetProviderConfigReference()
-
-	pcName := "default"
-	if pcRef != nil && pcRef.Name != "" {
-		pcName = pcRef.Name
-	}
-
-	pcErr := c.kube.Get(ctx, types.NamespacedName{Name: pcName, Namespace: "crossplane-system"}, pc)
-	if pcErr != nil {
-		pcNamespace := cr.GetNamespace()
-		if pcNamespace != "crossplane-system" {
-			fallbackErr := c.kube.Get(ctx, types.NamespacedName{Name: pcName, Namespace: pcNamespace}, pc)
-			if fallbackErr != nil {
-				return nil, errors.Wrapf(pcErr, "cannot get ProviderConfig '%s'", pcName)
-			}
-		} else {
-			return nil, errors.Wrapf(pcErr, "cannot get ProviderConfig '%s'", pcName)
-		}
-	}
-
-	config, err := clients.GetConfig(ctx, c.kube, pc)
+	svc, err := clients.Connect(ctx, c.kube, cr)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
-	}
-
-	svc, err := config.NewClient()
-	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
+		return nil, err
 	}
 
 	return &external{service: svc}, nil
@@ -120,7 +90,10 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	certData, err := e.service.GetPKICert(ctx, cr.Spec.ForProvider.Backend, serial)
 	if err != nil {
-		return managed.ExternalObservation{ResourceExists: false}, nil
+		if clients.IsNotFound(err) {
+			return managed.ExternalObservation{ResourceExists: false}, nil
+		}
+		return managed.ExternalObservation{}, err
 	}
 
 	certStr, _ := certData["certificate"].(string)
@@ -136,9 +109,15 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		if cr.Spec.ForProvider.RenewBefore != nil {
 			renewBefore = *cr.Spec.ForProvider.RenewBefore
 		}
-		renewalWindow := time.Until(expiry) * time.Duration(renewBefore*100) / 100
-		if renewalWindow <= 0 {
+
+		remaining := time.Until(expiry)
+		if remaining <= 0 {
 			needsUpdate = true
+		} else if ttl := cr.Spec.ForProvider.TTL; ttl != "" {
+			d, parseErr := time.ParseDuration(ttl)
+			if parseErr == nil && remaining < time.Duration(float64(d)*renewBefore) {
+				needsUpdate = true
+			}
 		}
 	}
 

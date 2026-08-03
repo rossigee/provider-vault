@@ -25,6 +25,20 @@ import (
 
 const vaultTokenHeader = "X-Vault-Token"
 
+// errNotFound is returned when the Vault API returns a 404 for a request.
+type errNotFound struct{ error }
+
+func (e *errNotFound) NotFound() bool { return true }
+
+// IsNotFound returns true if the supplied error indicates that the requested
+// Vault resource does not exist.
+func IsNotFound(err error) bool {
+	nf, ok := err.(interface {
+		NotFound() bool
+	})
+	return ok && nf.NotFound()
+}
+
 type VaultClient struct {
 	baseURL        *url.URL
 	httpClient     *http.Client
@@ -111,6 +125,9 @@ func (c *VaultClient) request(ctx context.Context, method, reqPath string, body 
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, &errNotFound{fmt.Errorf("vault API returned status %d: %s", resp.StatusCode, string(respBody))}
+		}
 		return nil, fmt.Errorf("vault API returned status %d: %s", resp.StatusCode, string(respBody))
 	}
 
@@ -119,12 +136,43 @@ func (c *VaultClient) request(ctx context.Context, method, reqPath string, body 
 
 // KV v2
 
-func (c *VaultClient) CreateKVSecret(ctx context.Context, path, mountPath string, data map[string]string) error {
+func (c *VaultClient) writeKVSecret(ctx context.Context, path, mountPath string, data map[string]interface{}) error {
 	dataPath := fmt.Sprintf("/v1/%s/data/%s", mountPath, path)
 	_, err := c.request(ctx, http.MethodPost, dataPath, map[string]interface{}{
 		"data": data,
 	})
 	return err
+}
+
+func (c *VaultClient) CreateKVSecret(ctx context.Context, path, mountPath string, data map[string]string) error {
+	d := make(map[string]interface{}, len(data))
+	for k, v := range data {
+		d[k] = v
+	}
+	return c.writeKVSecret(ctx, path, mountPath, d)
+}
+
+// UpdateKVSecret converges the Vault secret to the desired data set. Keys that
+// are present in Vault but absent from desired are deleted by writing null, as
+// per the KV v2 API.
+func (c *VaultClient) UpdateKVSecret(ctx context.Context, path, mountPath string, desired map[string]string) error {
+	existing, err := c.GetKVSecret(ctx, path, mountPath)
+	if err != nil {
+		if !IsNotFound(err) {
+			return err
+		}
+		existing = map[string]string{}
+	}
+	d := make(map[string]interface{}, len(desired)+len(existing))
+	for k, v := range desired {
+		d[k] = v
+	}
+	for k := range existing {
+		if _, ok := desired[k]; !ok {
+			d[k] = nil
+		}
+	}
+	return c.writeKVSecret(ctx, path, mountPath, d)
 }
 
 func (c *VaultClient) GetKVSecret(ctx context.Context, path, mountPath string) (map[string]string, error) {
@@ -209,7 +257,7 @@ func (c *VaultClient) GetAuthMethod(ctx context.Context, mountPath string) (map[
 			return v.(map[string]interface{}), nil
 		}
 	}
-	return nil, fmt.Errorf("auth method %s not found", mountPath)
+	return nil, &errNotFound{fmt.Errorf("auth method %s not found", mountPath)}
 }
 
 func (c *VaultClient) DisableAuthMethod(ctx context.Context, mountPath string) error {
@@ -470,6 +518,14 @@ func (c *VaultClient) GetTransitKey(ctx context.Context, backend, name string) (
 func (c *VaultClient) DeleteTransitKey(ctx context.Context, backend, name string) error {
 	apiPath := fmt.Sprintf("/v1/%s/keys/%s", backend, name)
 	_, err := c.request(ctx, http.MethodDelete, apiPath, nil)
+	return err
+}
+
+// ConfigureTransitKey updates the configurable properties of an existing
+// transit key.
+func (c *VaultClient) ConfigureTransitKey(ctx context.Context, backend, name string, params map[string]interface{}) error {
+	apiPath := fmt.Sprintf("/v1/%s/keys/%s/config", backend, name)
+	_, err := c.request(ctx, http.MethodPost, apiPath, params)
 	return err
 }
 

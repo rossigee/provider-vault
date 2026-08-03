@@ -2,9 +2,9 @@ package transitkey
 
 import (
 	"context"
+	"time"
 
 	"github.com/pkg/errors"
-	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -13,7 +13,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/transitkey/v1beta1"
-	vaultv1beta1 "github.com/rossigee/provider-vault/apis/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
 	"github.com/rossigee/provider-vault/internal/recorder"
 )
@@ -34,7 +33,6 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		resource.ManagedKind(v1beta1.TransitKeyGroupVersionKind),
 		managed.WithExternalConnector(&connector{
 			kube:  mgr.GetClient(),
-			usage: resource.TrackerFn(func(ctx context.Context, mg resource.Managed) error { return nil }),
 		}),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithPollInterval(o.PollInterval),
@@ -49,8 +47,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 }
 
 type connector struct {
-	kube  client.Client
-	usage resource.TrackerFn
+	kube client.Client
 }
 
 func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
@@ -59,39 +56,13 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, errors.New(errNotTransitKey)
 	}
 
-	if err := c.usage.Track(ctx, mg); err != nil {
+	if err := clients.TrackUsage(ctx, c.kube, cr); err != nil {
 		return nil, errors.Wrap(err, errTrackPCUsage)
 	}
 
-	pc := &vaultv1beta1.ProviderConfig{}
-	pcRef := cr.GetProviderConfigReference()
-
-	pcName := "default"
-	if pcRef != nil && pcRef.Name != "" {
-		pcName = pcRef.Name
-	}
-
-	pcErr := c.kube.Get(ctx, types.NamespacedName{Name: pcName, Namespace: "crossplane-system"}, pc)
-	if pcErr != nil {
-		pcNamespace := cr.GetNamespace()
-		if pcNamespace != "crossplane-system" {
-			fallbackErr := c.kube.Get(ctx, types.NamespacedName{Name: pcName, Namespace: pcNamespace}, pc)
-			if fallbackErr != nil {
-				return nil, errors.Wrapf(pcErr, "cannot get ProviderConfig '%s'", pcName)
-			}
-		} else {
-			return nil, errors.Wrapf(pcErr, "cannot get ProviderConfig '%s'", pcName)
-		}
-	}
-
-	config, err := clients.GetConfig(ctx, c.kube, pc)
+	svc, err := clients.Connect(ctx, c.kube, cr)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
-	}
-
-	svc, err := config.NewClient()
-	if err != nil {
-		return nil, errors.Wrap(err, errGetCreds)
+		return nil, err
 	}
 
 	return &external{service: svc}, nil
@@ -113,7 +84,10 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	data, err := e.service.GetTransitKey(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name)
 	if err != nil {
-		return managed.ExternalObservation{ResourceExists: false}, nil
+		if clients.IsNotFound(err) {
+			return managed.ExternalObservation{ResourceExists: false}, nil
+		}
+		return managed.ExternalObservation{}, err
 	}
 
 	cr.Status.AtProvider.Name = cr.Spec.ForProvider.Name
@@ -130,9 +104,54 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		cr.Status.AtProvider.LatestVersion = int(lv)
 	}
 
+	p := cr.Spec.ForProvider
+	upToDate := true
+	if p.Type != "" {
+		if t, ok := data["type"].(string); ok && t != p.Type {
+			upToDate = false
+		}
+	}
+	if p.ConvergentEncryption != nil {
+		if b, ok := data["convergent_encryption"].(bool); ok && b != *p.ConvergentEncryption {
+			upToDate = false
+		}
+	}
+	if p.Derived != nil {
+		if b, ok := data["derived"].(bool); ok && b != *p.Derived {
+			upToDate = false
+		}
+	}
+	if p.Exportable != nil {
+		if b, ok := data["exportable"].(bool); ok && b != *p.Exportable {
+			upToDate = false
+		}
+	}
+	if p.AllowPlaintextBackup != nil {
+		if b, ok := data["allow_plaintext_backup"].(bool); ok && b != *p.AllowPlaintextBackup {
+			upToDate = false
+		}
+	}
+	if p.MinDecryptionVersion != nil {
+		if f, ok := data["min_decryption_version"].(float64); ok && int(f) != *p.MinDecryptionVersion {
+			upToDate = false
+		}
+	}
+	if p.MinEncryptionVersion != nil {
+		if f, ok := data["min_encryption_version"].(float64); ok && int(f) != *p.MinEncryptionVersion {
+			upToDate = false
+		}
+	}
+	if p.AutoRotatePeriod != "" {
+		if d, err := time.ParseDuration(p.AutoRotatePeriod); err == nil {
+			if f, ok := data["auto_rotate_period"].(float64); ok && int64(f) != int64(d.Seconds()) {
+				upToDate = false
+			}
+		}
+	}
+
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: true,
+		ResourceUpToDate: upToDate,
 	}, nil
 }
 
@@ -162,6 +181,10 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		params["auto_rotate_period"] = cr.Spec.ForProvider.AutoRotatePeriod
 	}
 
+	// The key must be marked as allowed for deletion so that Delete can remove
+	// it when the managed resource is deleted.
+	params["deletion_allowed"] = true
+
 	if err := e.service.CreateTransitKey(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name, params); err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateTransitKey)
 	}
@@ -176,8 +199,6 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	}
 
 	params := make(map[string]interface{})
-	params["min_decryption_version"] = 0
-	params["min_encryption_version"] = 0
 	if cr.Spec.ForProvider.MinDecryptionVersion != nil {
 		params["min_decryption_version"] = *cr.Spec.ForProvider.MinDecryptionVersion
 	}
@@ -187,9 +208,11 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if cr.Spec.ForProvider.AutoRotatePeriod != "" {
 		params["auto_rotate_period"] = cr.Spec.ForProvider.AutoRotatePeriod
 	}
-	params["deletion_allowed"] = true
+	if len(params) == 0 {
+		return managed.ExternalUpdate{}, nil
+	}
 
-	if err := e.service.CreateTransitKey(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name, params); err != nil {
+	if err := e.service.ConfigureTransitKey(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name, params); err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errCreateTransitKey)
 	}
 
