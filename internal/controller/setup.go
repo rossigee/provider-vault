@@ -21,6 +21,7 @@ import (
 	"github.com/rossigee/provider-vault/internal/controller/kvsecret"
 	"github.com/rossigee/provider-vault/internal/controller/ldapauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/mount"
+	"github.com/rossigee/provider-vault/internal/controller/namespaces"
 	"github.com/rossigee/provider-vault/internal/controller/pkiconfig"
 	"github.com/rossigee/provider-vault/internal/controller/policy"
 	"github.com/rossigee/provider-vault/internal/controller/quota"
@@ -54,6 +55,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		ldapauthconfig.Setup,
 		token.Setup,
 		quota.Setup,
+		namespaces.Setup,
 	} {
 		if err := setup(mgr, o); err != nil {
 			return err

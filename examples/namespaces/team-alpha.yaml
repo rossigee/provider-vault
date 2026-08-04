@@ -1,0 +1,10 @@
+apiVersion: namespaces.vault.m.crossplane.io/v1beta1
+kind: VaultNamespace
+metadata:
+  name: team-alpha
+spec:
+  forProvider:
+    name: team-alpha
+    description: "Namespace for Team Alpha"
+  providerConfigRef:
+    name: vault-provider

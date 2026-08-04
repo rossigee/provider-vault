@@ -339,6 +339,39 @@ func (c *VaultClient) DeleteQuota(ctx context.Context, quotaType, name string) e
 	return err
 }
 
+// Namespace
+
+func (c *VaultClient) CreateNamespace(ctx context.Context, name, description string) error {
+	body := map[string]interface{}{}
+	if description != "" {
+		body["description"] = description
+	}
+	apiPath := fmt.Sprintf("/v1/sys/namespaces/%s", name)
+	_, err := c.request(ctx, http.MethodPost, apiPath, body)
+	return err
+}
+
+func (c *VaultClient) GetNamespace(ctx context.Context, name string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/sys/namespaces/%s", name)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse namespace response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) DeleteNamespace(ctx context.Context, name string) error {
+	apiPath := fmt.Sprintf("/v1/sys/namespaces/%s", name)
+	_, err := c.request(ctx, http.MethodDelete, apiPath, nil)
+	return err
+}
+
 // Mount
 
 func (c *VaultClient) EnableMount(ctx context.Context, path, engineType, description string, defaultLeaseTTL, maxLeaseTTL int, options map[string]string, config map[string]string) error {

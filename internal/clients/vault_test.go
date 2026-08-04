@@ -449,6 +449,82 @@ func TestDeleteQuota(t *testing.T) {
 	}
 }
 
+// --- Namespace ---
+
+func TestCreateNamespace(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/namespaces/my-team" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["description"] != "Team namespace" {
+			t.Errorf("description = %v", body["description"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	if err := client.CreateNamespace(context.Background(), "my-team", "Team namespace"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestGetNamespace(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/namespaces/my-team" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"name":"my-team","description":"Team namespace"}}`)
+	})
+	defer srv.Close()
+
+	data, err := client.GetNamespace(context.Background(), "my-team")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if data["name"] != "my-team" {
+		t.Errorf("name = %v", data["name"])
+	}
+}
+
+func TestGetNamespace_NotFound(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+	})
+	defer srv.Close()
+
+	_, err := client.GetNamespace(context.Background(), "not-here")
+	if err == nil {
+		t.Error("expected error for missing namespace")
+	}
+}
+
+func TestDeleteNamespace(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			t.Errorf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/namespaces/my-team" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	if err := client.DeleteNamespace(context.Background(), "my-team"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 // --- Policy ---
 
 func TestCreatePolicy(t *testing.T) {
