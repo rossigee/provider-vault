@@ -5,6 +5,7 @@ import (
 
 	approlesecretidv1beta1 "github.com/rossigee/provider-vault/apis/approlesecretid/v1beta1"
 	auditdevicev1beta1 "github.com/rossigee/provider-vault/apis/auditdevice/v1beta1"
+	ldapauthconfigv1beta1 "github.com/rossigee/provider-vault/apis/ldapauthconfig/v1beta1"
 	authbackendrolev1beta1 "github.com/rossigee/provider-vault/apis/authbackendrole/v1beta1"
 	authmethodv1beta1 "github.com/rossigee/provider-vault/apis/authmethod/v1beta1"
 	certificatev1beta1 "github.com/rossigee/provider-vault/apis/certificate/v1beta1"
@@ -80,6 +81,9 @@ func AddToScheme(s *runtime.Scheme) error {
 		return err
 	}
 	if err := auditdevicev1beta1.AddToScheme(s); err != nil {
+		return err
+	}
+	if err := ldapauthconfigv1beta1.AddToScheme(s); err != nil {
 		return err
 	}
 	return nil

@@ -16,6 +16,7 @@ import (
 	"github.com/rossigee/provider-vault/internal/controller/kubernetesauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/jwtauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/kvsecret"
+	"github.com/rossigee/provider-vault/internal/controller/ldapauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/mount"
 	"github.com/rossigee/provider-vault/internal/controller/pkiconfig"
 	"github.com/rossigee/provider-vault/internal/controller/policy"
@@ -43,6 +44,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		identitygroup.Setup,
 		kubernetesauthconfig.Setup,
 		jwtauthconfig.Setup,
+		ldapauthconfig.Setup,
 		token.Setup,
 	} {
 		if err := setup(mgr, o); err != nil {

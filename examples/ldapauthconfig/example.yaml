@@ -1,0 +1,20 @@
+apiVersion: ldapauthconfig.vault.m.crossplane.io/v1beta1
+kind: LDAPAuthConfig
+metadata:
+  name: corporate-ldap
+  namespace: vault
+spec:
+  forProvider:
+    backend: ldap-auth
+    url: ldap://ldap.example.com:389
+    bindDn: cn=vault,ou=apps,dc=example,dc=com
+    bindPassSecretRef:
+      name: ldap-creds
+      namespace: vault
+      key: password
+    userDn: ou=users,dc=example,dc=com
+    userAttr: cn
+    groupDn: ou=groups,dc=example,dc=com
+    groupAttr: member
+  providerConfigRef:
+    name: default

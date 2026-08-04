@@ -1091,3 +1091,69 @@ func TestDisableAuditDevice(t *testing.T) {
 		t.Fatalf("DisableAuditDevice: %v", err)
 	}
 }
+func TestConfigureLDAPAuth(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/ldap-auth/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["url"] != "ldap://ldap.example.com" {
+			t.Errorf("url = %v", body["url"])
+		}
+		if body["binddn"] != "cn=vault,ou=apps,dc=example,dc=com" {
+			t.Errorf("binddn = %v", body["binddn"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	err := client.ConfigureLDAPAuth(context.Background(), "ldap-auth", map[string]interface{}{
+		"url":      "ldap://ldap.example.com",
+		"binddn":   "cn=vault,ou=apps,dc=example,dc=com",
+		"bindpass": "secret",
+	})
+	if err != nil {
+		t.Fatalf("ConfigureLDAPAuth: %v", err)
+	}
+}
+
+func TestGetLDAPAuthConfig(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/ldap-auth/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"url":"ldap://ldap.example.com","binddn":"cn=vault,ou=apps,dc=example,dc=com"}}`)
+	})
+	defer srv.Close()
+
+	data, err := client.GetLDAPAuthConfig(context.Background(), "ldap-auth")
+	if err != nil {
+		t.Fatalf("GetLDAPAuthConfig: %v", err)
+	}
+	if data["url"] != "ldap://ldap.example.com" {
+		t.Errorf("url = %v", data["url"])
+	}
+	if data["binddn"] != "cn=vault,ou=apps,dc=example,dc=com" {
+		t.Errorf("binddn = %v", data["binddn"])
+	}
+}
+
+func TestGetLDAPAuthConfig_NotFound(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+	})
+	defer srv.Close()
+
+	if _, err := client.GetLDAPAuthConfig(context.Background(), "ldap-auth"); err == nil {
+		t.Error("expected error for missing config")
+	}
+}
