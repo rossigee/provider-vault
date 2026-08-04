@@ -1,0 +1,13 @@
+apiVersion: jwtauthconfig.vault.m.crossplane.io/v1beta1
+kind: JWTAuthConfig
+metadata:
+  name: google-oidc
+  namespace: vault
+spec:
+  forProvider:
+    backend: jwt-auth
+    oidcDiscoveryUrl: https://accounts.google.com
+    boundIssuer: https://accounts.google.com
+    defaultRole: google
+  providerConfigRef:
+    name: default

@@ -13,6 +13,7 @@ import (
 	"github.com/rossigee/provider-vault/internal/controller/identityentity"
 	"github.com/rossigee/provider-vault/internal/controller/identitygroup"
 	"github.com/rossigee/provider-vault/internal/controller/kubernetesauthconfig"
+	"github.com/rossigee/provider-vault/internal/controller/jwtauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/kvsecret"
 	"github.com/rossigee/provider-vault/internal/controller/mount"
 	"github.com/rossigee/provider-vault/internal/controller/pkiconfig"
@@ -39,6 +40,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		identityentity.Setup,
 		identitygroup.Setup,
 		kubernetesauthconfig.Setup,
+		jwtauthconfig.Setup,
 		token.Setup,
 	} {
 		if err := setup(mgr, o); err != nil {

@@ -917,3 +917,69 @@ func TestGetPKIURLs(t *testing.T) {
 		t.Error("expected issuing_certificates in data")
 	}
 }
+
+func TestConfigureJWTAuth(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/jwt-auth/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["oidc_discovery_url"] != "https://accounts.google.com" {
+			t.Errorf("oidc_discovery_url = %v", body["oidc_discovery_url"])
+		}
+		if body["bound_issuer"] != "https://accounts.google.com" {
+			t.Errorf("bound_issuer = %v", body["bound_issuer"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	err := client.ConfigureJWTAuth(context.Background(), "jwt-auth", map[string]interface{}{
+		"oidc_discovery_url": "https://accounts.google.com",
+		"bound_issuer":       "https://accounts.google.com",
+	})
+	if err != nil {
+		t.Fatalf("ConfigureJWTAuth: %v", err)
+	}
+}
+
+func TestGetJWTAuthConfig(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/jwt-auth/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"oidc_discovery_url":"https://accounts.google.com","bound_issuer":"https://accounts.google.com"}}`)
+	})
+	defer srv.Close()
+
+	data, err := client.GetJWTAuthConfig(context.Background(), "jwt-auth")
+	if err != nil {
+		t.Fatalf("GetJWTAuthConfig: %v", err)
+	}
+	if data["oidc_discovery_url"] != "https://accounts.google.com" {
+		t.Errorf("oidc_discovery_url = %v", data["oidc_discovery_url"])
+	}
+	if data["bound_issuer"] != "https://accounts.google.com" {
+		t.Errorf("bound_issuer = %v", data["bound_issuer"])
+	}
+}
+
+func TestGetJWTAuthConfig_NotFound(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+	})
+	defer srv.Close()
+
+	if _, err := client.GetJWTAuthConfig(context.Background(), "jwt-auth"); err == nil {
+		t.Error("expected error for missing config")
+	}
+}
