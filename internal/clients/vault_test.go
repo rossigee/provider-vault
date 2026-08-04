@@ -1216,3 +1216,69 @@ func TestGetAWSAuthConfig_NotFound(t *testing.T) {
 		t.Error("expected error for missing config")
 	}
 }
+
+func TestConfigureAzureAuth(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/azure-auth/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["tenant_id"] != "tenant-123" {
+			t.Errorf("tenant_id = %v", body["tenant_id"])
+		}
+		if body["client_id"] != "client-456" {
+			t.Errorf("client_id = %v", body["client_id"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	err := client.ConfigureAzureAuth(context.Background(), "azure-auth", map[string]interface{}{
+		"tenant_id": "tenant-123",
+		"client_id": "client-456",
+	})
+	if err != nil {
+		t.Fatalf("ConfigureAzureAuth: %v", err)
+	}
+}
+
+func TestGetAzureAuthConfig(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/azure-auth/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"tenant_id":"tenant-123","client_id":"client-456"}}`)
+	})
+	defer srv.Close()
+
+	data, err := client.GetAzureAuthConfig(context.Background(), "azure-auth")
+	if err != nil {
+		t.Fatalf("GetAzureAuthConfig: %v", err)
+	}
+	if data["tenant_id"] != "tenant-123" {
+		t.Errorf("tenant_id = %v", data["tenant_id"])
+	}
+	if data["client_id"] != "client-456" {
+		t.Errorf("client_id = %v", data["client_id"])
+	}
+}
+
+func TestGetAzureAuthConfig_NotFound(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+	})
+	defer srv.Close()
+
+	if _, err := client.GetAzureAuthConfig(context.Background(), "azure-auth"); err == nil {
+		t.Error("expected error for missing config")
+	}
+}

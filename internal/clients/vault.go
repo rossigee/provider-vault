@@ -863,6 +863,29 @@ func (c *VaultClient) GetAWSAuthConfig(ctx context.Context, backend string) (map
 	return result.Data, nil
 }
 
+// AzureAuthConfig
+
+func (c *VaultClient) ConfigureAzureAuth(ctx context.Context, backend string, params map[string]interface{}) error {
+	apiPath := fmt.Sprintf("/v1/auth/%s/config", backend)
+	_, err := c.request(ctx, http.MethodPost, apiPath, params)
+	return err
+}
+
+func (c *VaultClient) GetAzureAuthConfig(ctx context.Context, backend string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/auth/%s/config", backend)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse Azure auth config response")
+	}
+	return result.Data, nil
+}
+
 // AppRoleSecretID
 
 func (c *VaultClient) GenerateAppRoleSecretID(ctx context.Context, backend, roleName string, params map[string]interface{}) (map[string]interface{}, error) {

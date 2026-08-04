@@ -1,0 +1,12 @@
+apiVersion: azureauthconfig.vault.m.crossplane.io/v1beta1
+kind: AzureAuthConfig
+metadata:
+  name: azure-ad-auth
+  namespace: vault
+spec:
+  forProvider:
+    backend: azure-auth
+    tenantId: "00000000-0000-0000-0000-000000000000"
+    clientId: "00000000-0000-0000-0000-000000000001"
+  providerConfigRef:
+    name: default
