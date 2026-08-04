@@ -285,6 +285,60 @@ func (c *VaultClient) DisableAuthMethod(ctx context.Context, mountPath string) e
 	return err
 }
 
+// Quota
+
+func (c *VaultClient) CreateRateQuota(ctx context.Context, name, path string, rate string, interval string, blocked []string) error {
+	body := map[string]interface{}{
+		"rate":      rate,
+		"interval":  interval,
+	}
+	if path != "" {
+		body["path"] = path
+	}
+	if len(blocked) > 0 {
+		body["blocked"] = blocked
+	}
+	apiPath := fmt.Sprintf("/v1/sys/quotas/rate/%s", name)
+	_, err := c.request(ctx, http.MethodPut, apiPath, body)
+	return err
+}
+
+func (c *VaultClient) CreateLeaseQuota(ctx context.Context, name, path string, maxLeases int, blocked []string) error {
+	body := map[string]interface{}{
+		"max_leases": maxLeases,
+	}
+	if path != "" {
+		body["path"] = path
+	}
+	if len(blocked) > 0 {
+		body["blocked"] = blocked
+	}
+	apiPath := fmt.Sprintf("/v1/sys/quotas/lease/%s", name)
+	_, err := c.request(ctx, http.MethodPut, apiPath, body)
+	return err
+}
+
+func (c *VaultClient) GetQuota(ctx context.Context, quotaType, name string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/sys/quotas/%s/%s", quotaType, name)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse quota response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) DeleteQuota(ctx context.Context, quotaType, name string) error {
+	apiPath := fmt.Sprintf("/v1/sys/quotas/%s/%s", quotaType, name)
+	_, err := c.request(ctx, http.MethodDelete, apiPath, nil)
+	return err
+}
+
 // Mount
 
 func (c *VaultClient) EnableMount(ctx context.Context, path, engineType, description string, defaultLeaseTTL, maxLeaseTTL int, options map[string]string, config map[string]string) error {

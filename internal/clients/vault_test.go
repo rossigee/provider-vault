@@ -345,6 +345,110 @@ func TestDeleteKVSecret(t *testing.T) {
 	}
 }
 
+// --- Quota ---
+
+func TestCreateRateQuota(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/quotas/rate/rate-limit" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["rate"] != "100" {
+			t.Errorf("rate = %v", body["rate"])
+		}
+		if body["interval"] != "second" {
+			t.Errorf("interval = %v", body["interval"])
+		}
+		if body["path"] != "sys/health" {
+			t.Errorf("path = %v", body["path"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	if err := client.CreateRateQuota(context.Background(), "rate-limit", "sys/health", "100", "second", nil); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestCreateLeaseQuota(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/quotas/lease/lease-limit" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["max_leases"] != float64(50) {
+			t.Errorf("max_leases = %v", body["max_leases"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	if err := client.CreateLeaseQuota(context.Background(), "lease-limit", "secret/data/myapp", 50, nil); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestGetQuota_Rate(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/quotas/rate/rate-limit" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"name":"rate-limit","type":"rate","path":"sys/health","rate":100,"interval":"second"}}`)
+	})
+	defer srv.Close()
+
+	data, err := client.GetQuota(context.Background(), "rate", "rate-limit")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if data["name"] != "rate-limit" {
+		t.Errorf("name = %v", data["name"])
+	}
+}
+
+func TestGetQuota_NotFound(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+	})
+	defer srv.Close()
+
+	_, err := client.GetQuota(context.Background(), "rate", "not-here")
+	if err == nil {
+		t.Error("expected error for missing quota")
+	}
+}
+
+func TestDeleteQuota(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			t.Errorf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/quotas/rate/rate-limit" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	if err := client.DeleteQuota(context.Background(), "rate", "rate-limit"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 // --- Policy ---
 
 func TestCreatePolicy(t *testing.T) {

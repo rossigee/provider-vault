@@ -23,6 +23,7 @@ import (
 	"github.com/rossigee/provider-vault/internal/controller/mount"
 	"github.com/rossigee/provider-vault/internal/controller/pkiconfig"
 	"github.com/rossigee/provider-vault/internal/controller/policy"
+	"github.com/rossigee/provider-vault/internal/controller/quota"
 	"github.com/rossigee/provider-vault/internal/controller/secretbackendrole"
 	"github.com/rossigee/provider-vault/internal/controller/token"
 	"github.com/rossigee/provider-vault/internal/controller/transitkey"
@@ -52,6 +53,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		jwtauthconfig.Setup,
 		ldapauthconfig.Setup,
 		token.Setup,
+		quota.Setup,
 	} {
 		if err := setup(mgr, o); err != nil {
 			return err

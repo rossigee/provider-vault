@@ -1,0 +1,15 @@
+apiVersion: quota.vault.m.crossplane.io/v1beta1
+kind: Quota
+metadata:
+  name: rate-limit-api
+spec:
+  forProvider:
+    name: rate-limit-api
+    type: rate
+    path: "sys/health"
+    rate: "100"
+    interval: second
+    blocked:
+      - "sys/health"
+  providerConfigRef:
+    name: vault-provider
