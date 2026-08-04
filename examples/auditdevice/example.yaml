@@ -1,0 +1,14 @@
+apiVersion: auditdevice.vault.m.crossplane.io/v1beta1
+kind: AuditDevice
+metadata:
+  name: file-audit
+  namespace: vault
+spec:
+  forProvider:
+    path: file-audit
+    type: file
+    description: File-based audit device for request/response logging
+    options:
+      file_path: /var/log/vault/audit.log
+  providerConfigRef:
+    name: default

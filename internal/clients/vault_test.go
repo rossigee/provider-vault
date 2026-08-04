@@ -983,3 +983,111 @@ func TestGetJWTAuthConfig_NotFound(t *testing.T) {
 		t.Error("expected error for missing config")
 	}
 }
+
+func TestEnableAuditDevice(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("method = %s, want PUT", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/audit/file-audit" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["type"] != "file" {
+			t.Errorf("type = %v", body["type"])
+		}
+		if body["description"] != "File audit device" {
+			t.Errorf("description = %v", body["description"])
+		}
+		if body["local"] != false {
+			t.Errorf("local = %v", body["local"])
+		}
+		opts, ok := body["options"].(map[string]interface{})
+		if !ok {
+			t.Fatal("expected options map")
+		}
+		if opts["file_path"] != "/var/log/audit.log" {
+			t.Errorf("file_path = %v", opts["file_path"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	err := client.EnableAuditDevice(context.Background(), "file-audit", "file", "File audit device", false, map[string]string{"file_path": "/var/log/audit.log"})
+	if err != nil {
+		t.Fatalf("EnableAuditDevice: %v", err)
+	}
+}
+
+func TestEnableAuditDevice_Local(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["local"] != true {
+			t.Errorf("local = %v, want true", body["local"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	err := client.EnableAuditDevice(context.Background(), "local-audit", "syslog", "Local audit device", true, nil)
+	if err != nil {
+		t.Fatalf("EnableAuditDevice: %v", err)
+	}
+}
+
+func TestGetAuditDevice(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/audit/file-audit" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"type":"file","description":"File audit device","local":false}}`)
+	})
+	defer srv.Close()
+
+	data, err := client.GetAuditDevice(context.Background(), "file-audit")
+	if err != nil {
+		t.Fatalf("GetAuditDevice: %v", err)
+	}
+	if data["type"] != "file" {
+		t.Errorf("type = %v", data["type"])
+	}
+	if data["description"] != "File audit device" {
+		t.Errorf("description = %v", data["description"])
+	}
+}
+
+func TestGetAuditDevice_NotFound(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+	})
+	defer srv.Close()
+
+	if _, err := client.GetAuditDevice(context.Background(), "missing-audit"); err == nil {
+		t.Error("expected error for missing audit device")
+	}
+}
+
+func TestDisableAuditDevice(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodDelete {
+			t.Errorf("method = %s, want DELETE", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/audit/file-audit" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	err := client.DisableAuditDevice(context.Background(), "file-audit")
+	if err != nil {
+		t.Fatalf("DisableAuditDevice: %v", err)
+	}
+}

@@ -780,6 +780,43 @@ func (c *VaultClient) GetJWTAuthConfig(ctx context.Context, backend string) (map
 	return result.Data, nil
 }
 
+// AuditDevice
+
+func (c *VaultClient) EnableAuditDevice(ctx context.Context, path, methodType, description string, local bool, options map[string]string) error {
+	body := map[string]interface{}{
+		"type":        methodType,
+		"description": description,
+		"local":       local,
+	}
+	if len(options) > 0 {
+		body["options"] = options
+	}
+	apiPath := fmt.Sprintf("/v1/sys/audit/%s", path)
+	_, err := c.request(ctx, http.MethodPut, apiPath, body)
+	return err
+}
+
+func (c *VaultClient) GetAuditDevice(ctx context.Context, path string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/sys/audit/%s", path)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse audit device response")
+	}
+	return result.Data, nil
+}
+
+func (c *VaultClient) DisableAuditDevice(ctx context.Context, path string) error {
+	apiPath := fmt.Sprintf("/v1/sys/audit/%s", path)
+	_, err := c.request(ctx, http.MethodDelete, apiPath, nil)
+	return err
+}
+
 // AppRoleSecretID
 
 func (c *VaultClient) GenerateAppRoleSecretID(ctx context.Context, backend, roleName string, params map[string]interface{}) (map[string]interface{}, error) {

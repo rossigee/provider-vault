@@ -5,6 +5,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/rossigee/provider-vault/internal/controller/approlesecretid"
+	"github.com/rossigee/provider-vault/internal/controller/auditdevice"
 	"github.com/rossigee/provider-vault/internal/controller/authbackendrole"
 	"github.com/rossigee/provider-vault/internal/controller/authmethod"
 	"github.com/rossigee/provider-vault/internal/controller/certificate"
@@ -26,6 +27,7 @@ import (
 func Setup(mgr ctrl.Manager, o controller.Options) error {
 	for _, setup := range []func(ctrl.Manager, controller.Options) error{
 		approlesecretid.Setup,
+		auditdevice.Setup,
 		kvsecret.Setup,
 		policy.Setup,
 		authmethod.Setup,
