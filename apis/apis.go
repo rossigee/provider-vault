@@ -19,6 +19,7 @@ import (
 	identityentityv1beta1 "github.com/rossigee/provider-vault/apis/identityentity/v1beta1"
 	identitygroupv1beta1 "github.com/rossigee/provider-vault/apis/identitygroup/v1beta1"
 	kubernetesauthconfigv1beta1 "github.com/rossigee/provider-vault/apis/kubernetesauthconfig/v1beta1"
+	leaserenewalv1beta1 "github.com/rossigee/provider-vault/apis/leaserenewal/v1beta1"
 	jwtauthconfigv1beta1 "github.com/rossigee/provider-vault/apis/jwtauthconfig/v1beta1"
 	kvsecretv1beta1 "github.com/rossigee/provider-vault/apis/kvsecret/v1beta1"
 	mountv1beta1 "github.com/rossigee/provider-vault/apis/mount/v1beta1"
@@ -104,6 +105,9 @@ func AddToScheme(s *runtime.Scheme) error {
 		return err
 	}
 	if err := namespacesv1beta1.AddToScheme(s); err != nil {
+		return err
+	}
+	if err := leaserenewalv1beta1.AddToScheme(s); err != nil {
 		return err
 	}
 	return nil

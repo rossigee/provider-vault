@@ -1,0 +1,11 @@
+apiVersion: leaserenewal.vault.m.crossplane.io/v1beta1
+kind: LeaseRenewal
+metadata:
+  name: database-lease-renewal
+spec:
+  forProvider:
+    leaseID: "hmac-sha256:abc123def456"
+    increment: 3600
+    revokeOnDelete: true
+  providerConfigRef:
+    name: vault-provider

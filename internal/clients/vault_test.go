@@ -525,6 +525,126 @@ func TestDeleteNamespace(t *testing.T) {
 	}
 }
 
+// --- Lease ---
+
+func TestRenewLease(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/leases/renew" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["lease_id"] != "hmac-sha256:abc123" {
+			t.Errorf("lease_id = %v", body["lease_id"])
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"lease_id":"hmac-sha256:abc123","renewable":true,"lease_duration":3600}`)
+	})
+	defer srv.Close()
+
+	info, err := client.RenewLease(context.Background(), "hmac-sha256:abc123", nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if info.LeaseID != "hmac-sha256:abc123" {
+		t.Errorf("LeaseID = %s", info.LeaseID)
+	}
+	if !info.Renewable {
+		t.Error("expected Renewable=true")
+	}
+	if info.LeaseDuration != 3600 {
+		t.Errorf("LeaseDuration = %d", info.LeaseDuration)
+	}
+}
+
+func TestRenewLease_WithIncrement(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["increment"] != float64(1800) {
+			t.Errorf("increment = %v, want 1800", body["increment"])
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"lease_id":"hmac-sha256:abc123","renewable":true,"lease_duration":1800}`)
+	})
+	defer srv.Close()
+
+	incr := 1800
+	info, err := client.RenewLease(context.Background(), "hmac-sha256:abc123", &incr)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if info.LeaseDuration != 1800 {
+		t.Errorf("LeaseDuration = %d", info.LeaseDuration)
+	}
+}
+
+func TestRevokeLease(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/leases/revoke" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["lease_id"] != "hmac-sha256:abc123" {
+			t.Errorf("lease_id = %v", body["lease_id"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	if err := client.RevokeLease(context.Background(), "hmac-sha256:abc123"); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestLookupLease(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("method = %s", r.Method)
+		}
+		if r.URL.Path != "/v1/sys/leases/lookup" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"lease_id":"hmac-sha256:abc123","renewable":true,"lease_duration":3600}}`)
+	})
+	defer srv.Close()
+
+	info, err := client.LookupLease(context.Background(), "hmac-sha256:abc123")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if info.LeaseID != "hmac-sha256:abc123" {
+		t.Errorf("LeaseID = %s", info.LeaseID)
+	}
+	if !info.Renewable {
+		t.Error("expected Renewable=true")
+	}
+	if info.LeaseDuration != 3600 {
+		t.Errorf("LeaseDuration = %d", info.LeaseDuration)
+	}
+}
+
+func TestLookupLease_NotFound(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+	})
+	defer srv.Close()
+
+	_, err := client.LookupLease(context.Background(), "not-here")
+	if err == nil {
+		t.Error("expected error for missing lease")
+	}
+}
+
 // --- Policy ---
 
 func TestCreatePolicy(t *testing.T) {

@@ -372,6 +372,73 @@ func (c *VaultClient) DeleteNamespace(ctx context.Context, name string) error {
 	return err
 }
 
+// Lease
+
+type LeaseInfo struct {
+	LeaseID    string `json:"lease_id"`
+	Renewable  bool   `json:"renewable"`
+	LeaseDuration int `json:"lease_duration"`
+}
+
+func (c *VaultClient) RenewLease(ctx context.Context, leaseID string, increment *int) (*LeaseInfo, error) {
+	body := map[string]interface{}{
+		"lease_id": leaseID,
+	}
+	if increment != nil {
+		body["increment"] = *increment
+	}
+	resp, err := c.request(ctx, http.MethodPut, "/v1/sys/leases/renew", body)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		LeaseID      string `json:"lease_id"`
+		Renewable    bool   `json:"renewable"`
+		LeaseDuration int  `json:"lease_duration"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse lease renewal response")
+	}
+	return &LeaseInfo{
+		LeaseID:       result.LeaseID,
+		Renewable:     result.Renewable,
+		LeaseDuration: result.LeaseDuration,
+	}, nil
+}
+
+func (c *VaultClient) RevokeLease(ctx context.Context, leaseID string) error {
+	body := map[string]interface{}{
+		"lease_id": leaseID,
+	}
+	_, err := c.request(ctx, http.MethodPut, "/v1/sys/leases/revoke", body)
+	return err
+}
+
+func (c *VaultClient) LookupLease(ctx context.Context, leaseID string) (*LeaseInfo, error) {
+	body := map[string]interface{}{
+		"lease_id": leaseID,
+	}
+	resp, err := c.request(ctx, http.MethodPut, "/v1/sys/leases/lookup", body)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data struct {
+			LeaseID      string `json:"lease_id"`
+			Renewable    bool   `json:"renewable"`
+			LeaseDuration int  `json:"lease_duration"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse lease lookup response")
+	}
+	return &LeaseInfo{
+		LeaseID:       result.Data.LeaseID,
+		Renewable:     result.Data.Renewable,
+		LeaseDuration: result.Data.LeaseDuration,
+	}, nil
+}
+
 // Mount
 
 func (c *VaultClient) EnableMount(ctx context.Context, path, engineType, description string, defaultLeaseTTL, maxLeaseTTL int, options map[string]string, config map[string]string) error {
