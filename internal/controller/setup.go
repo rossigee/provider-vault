@@ -10,6 +10,7 @@ import (
 	"github.com/rossigee/provider-vault/internal/controller/authmethod"
 	"github.com/rossigee/provider-vault/internal/controller/awsauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/azureauthconfig"
+	"github.com/rossigee/provider-vault/internal/controller/gcpauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/certificate"
 	"github.com/rossigee/provider-vault/internal/controller/databasebackend"
 	"github.com/rossigee/provider-vault/internal/controller/databaserole"
@@ -33,6 +34,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		auditdevice.Setup,
 		awsauthconfig.Setup,
 		azureauthconfig.Setup,
+		gcpauthconfig.Setup,
 		kvsecret.Setup,
 		policy.Setup,
 		authmethod.Setup,

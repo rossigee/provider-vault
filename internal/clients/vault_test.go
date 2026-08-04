@@ -1282,3 +1282,69 @@ func TestGetAzureAuthConfig_NotFound(t *testing.T) {
 		t.Error("expected error for missing config")
 	}
 }
+
+func TestConfigureGCPAuth(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/gcp-auth/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["service_account_email"] != "vault@example.iam.gserviceaccount.com" {
+			t.Errorf("service_account_email = %v", body["service_account_email"])
+		}
+		if body["project_id"] != "my-project" {
+			t.Errorf("project_id = %v", body["project_id"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	err := client.ConfigureGCPAuth(context.Background(), "gcp-auth", map[string]interface{}{
+		"service_account_email": "vault@example.iam.gserviceaccount.com",
+		"project_id":            "my-project",
+	})
+	if err != nil {
+		t.Fatalf("ConfigureGCPAuth: %v", err)
+	}
+}
+
+func TestGetGCPAuthConfig(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/gcp-auth/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"service_account_email":"vault@example.iam.gserviceaccount.com","project_id":"my-project"}}`)
+	})
+	defer srv.Close()
+
+	data, err := client.GetGCPAuthConfig(context.Background(), "gcp-auth")
+	if err != nil {
+		t.Fatalf("GetGCPAuthConfig: %v", err)
+	}
+	if data["service_account_email"] != "vault@example.iam.gserviceaccount.com" {
+		t.Errorf("service_account_email = %v", data["service_account_email"])
+	}
+	if data["project_id"] != "my-project" {
+		t.Errorf("project_id = %v", data["project_id"])
+	}
+}
+
+func TestGetGCPAuthConfig_NotFound(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+	})
+	defer srv.Close()
+
+	if _, err := client.GetGCPAuthConfig(context.Background(), "gcp-auth"); err == nil {
+		t.Error("expected error for missing config")
+	}
+}

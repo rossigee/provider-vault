@@ -1,0 +1,12 @@
+apiVersion: gcpauthconfig.vault.m.crossplane.io/v1beta1
+kind: GCPAuthConfig
+metadata:
+  name: gcp-iam-auth
+  namespace: vault
+spec:
+  forProvider:
+    backend: gcp-auth
+    projectId: my-gcp-project
+    serviceAccountEmail: vault@my-gcp-project.iam.gserviceaccount.com
+  providerConfigRef:
+    name: default
