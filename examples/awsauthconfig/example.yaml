@@ -1,0 +1,11 @@
+apiVersion: awsauthconfig.vault.m.crossplane.io/v1beta1
+kind: AWSAuthConfig
+metadata:
+  name: aws-iam-auth
+  namespace: vault
+spec:
+  forProvider:
+    backend: aws-auth
+    iamServerIdHeaderValue: vault.example.com
+  providerConfigRef:
+    name: default

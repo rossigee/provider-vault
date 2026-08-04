@@ -8,6 +8,7 @@ import (
 	"github.com/rossigee/provider-vault/internal/controller/auditdevice"
 	"github.com/rossigee/provider-vault/internal/controller/authbackendrole"
 	"github.com/rossigee/provider-vault/internal/controller/authmethod"
+	"github.com/rossigee/provider-vault/internal/controller/awsauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/certificate"
 	"github.com/rossigee/provider-vault/internal/controller/databasebackend"
 	"github.com/rossigee/provider-vault/internal/controller/databaserole"
@@ -29,6 +30,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 	for _, setup := range []func(ctrl.Manager, controller.Options) error{
 		approlesecretid.Setup,
 		auditdevice.Setup,
+		awsauthconfig.Setup,
 		kvsecret.Setup,
 		policy.Setup,
 		authmethod.Setup,

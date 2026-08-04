@@ -1157,3 +1157,62 @@ func TestGetLDAPAuthConfig_NotFound(t *testing.T) {
 		t.Error("expected error for missing config")
 	}
 }
+
+func TestConfigureAWSAuth(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/aws-auth/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["iam_server_id_header_value"] != "vault.example.com" {
+			t.Errorf("iam_server_id_header_value = %v", body["iam_server_id_header_value"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	err := client.ConfigureAWSAuth(context.Background(), "aws-auth", map[string]interface{}{
+		"iam_server_id_header_value": "vault.example.com",
+	})
+	if err != nil {
+		t.Fatalf("ConfigureAWSAuth: %v", err)
+	}
+}
+
+func TestGetAWSAuthConfig(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/aws-auth/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"iam_server_id_header_value":"vault.example.com"}}`)
+	})
+	defer srv.Close()
+
+	data, err := client.GetAWSAuthConfig(context.Background(), "aws-auth")
+	if err != nil {
+		t.Fatalf("GetAWSAuthConfig: %v", err)
+	}
+	if data["iam_server_id_header_value"] != "vault.example.com" {
+		t.Errorf("iam_server_id_header_value = %v", data["iam_server_id_header_value"])
+	}
+}
+
+func TestGetAWSAuthConfig_NotFound(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+	})
+	defer srv.Close()
+
+	if _, err := client.GetAWSAuthConfig(context.Background(), "aws-auth"); err == nil {
+		t.Error("expected error for missing config")
+	}
+}
