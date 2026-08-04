@@ -790,3 +790,130 @@ func generateTestCert(t *testing.T) (certPEM, keyPEM []byte) {
 	}
 	return certBuf.Bytes(), keyBuf.Bytes()
 }
+
+func TestRotateTransitKey(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/v1/transit/keys/mykey/rotate" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	if err := client.RotateTransitKey(context.Background(), "transit", "mykey"); err != nil {
+		t.Fatalf("RotateTransitKey: %v", err)
+	}
+}
+
+func TestReadAppRoleRoleID(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v1/auth/approle/role/myrole/role-id" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"role_id":"role-123"}}`)
+	})
+	defer srv.Close()
+
+	roleID, err := client.ReadAppRoleRoleID(context.Background(), "approle", "myrole")
+	if err != nil {
+		t.Fatalf("ReadAppRoleRoleID: %v", err)
+	}
+	if roleID != "role-123" {
+		t.Errorf("role_id = %s", roleID)
+	}
+}
+
+func TestReadAppRoleRoleID_Missing(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(404)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+	})
+	defer srv.Close()
+
+	if _, err := client.ReadAppRoleRoleID(context.Background(), "approle", "missing"); err == nil {
+		t.Error("expected error for missing role")
+	}
+}
+
+func TestConfigurePKICRL(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %s, want POST", r.Method)
+		}
+		if r.URL.Path != "/v1/pki/config/crl" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["expiry"] != "72h" {
+			t.Errorf("expiry = %v", body["expiry"])
+		}
+		if body["auto_rebuild"] != true {
+			t.Errorf("auto_rebuild = %v", body["auto_rebuild"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	err := client.ConfigurePKICRL(context.Background(), "pki", map[string]interface{}{
+		"expiry":        "72h",
+		"auto_rebuild":  true,
+	})
+	if err != nil {
+		t.Fatalf("ConfigurePKICRL: %v", err)
+	}
+}
+
+func TestGetPKICRLConfig(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v1/pki/config/crl" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"expiry":"72h","auto_rebuild":true}}`)
+	})
+	defer srv.Close()
+
+	data, err := client.GetPKICRLConfig(context.Background(), "pki")
+	if err != nil {
+		t.Fatalf("GetPKICRLConfig: %v", err)
+	}
+	if data["expiry"] != "72h" {
+		t.Errorf("expiry = %v", data["expiry"])
+	}
+	if data["auto_rebuild"] != true {
+		t.Errorf("auto_rebuild = %v", data["auto_rebuild"])
+	}
+}
+
+func TestGetPKIURLs(t *testing.T) {
+	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet {
+			t.Errorf("method = %s, want GET", r.Method)
+		}
+		if r.URL.Path != "/v1/pki/config/urls" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"issuing_certificates":["http://vault/ca"]}}`)
+	})
+	defer srv.Close()
+
+	data, err := client.GetPKIURLs(context.Background(), "pki")
+	if err != nil {
+		t.Fatalf("GetPKIURLs: %v", err)
+	}
+	if data["issuing_certificates"] == nil {
+		t.Error("expected issuing_certificates in data")
+	}
+}

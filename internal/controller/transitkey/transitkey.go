@@ -24,6 +24,7 @@ const (
 	errGetCreds         = "cannot get credentials"
 	errCreateTransitKey = "cannot create Vault transit key"
 	errDeleteTransitKey = "cannot delete Vault transit key"
+	errRotateTransitKey = "cannot rotate Vault transit key"
 )
 
 func Setup(mgr ctrl.Manager, o controller.Options) error {
@@ -148,6 +149,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 			}
 		}
 	}
+	if p.RotateToVersion != nil && cr.Status.AtProvider.LatestVersion < *p.RotateToVersion {
+		upToDate = false
+	}
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,
@@ -208,12 +212,25 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if cr.Spec.ForProvider.AutoRotatePeriod != "" {
 		params["auto_rotate_period"] = cr.Spec.ForProvider.AutoRotatePeriod
 	}
-	if len(params) == 0 {
-		return managed.ExternalUpdate{}, nil
+	if len(params) > 0 {
+		if err := e.service.ConfigureTransitKey(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name, params); err != nil {
+			return managed.ExternalUpdate{}, errors.Wrap(err, errCreateTransitKey)
+		}
 	}
 
-	if err := e.service.ConfigureTransitKey(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name, params); err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errCreateTransitKey)
+	// Rotate until the key's latest version reaches the desired target. Each
+	// rotation increments the latest version by one. The latest version was
+	// recorded in Observe, so the number of rotations needed is the difference
+	// between the target and the observed version.
+	if target := cr.Spec.ForProvider.RotateToVersion; target != nil {
+		rotations := *target - cr.Status.AtProvider.LatestVersion
+		if rotations > 0 {
+			for i := 0; i < rotations; i++ {
+				if err := e.service.RotateTransitKey(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name); err != nil {
+					return managed.ExternalUpdate{}, errors.Wrap(err, errRotateTransitKey)
+				}
+			}
+		}
 	}
 
 	return managed.ExternalUpdate{}, nil

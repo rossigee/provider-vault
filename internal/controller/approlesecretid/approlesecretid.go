@@ -28,6 +28,7 @@ const (
 	errCreateSecretID     = "cannot generate AppRole SecretID"
 	errLookupSecretID     = "cannot lookup AppRole SecretID"
 	errDestroySecretID    = "cannot destroy AppRole SecretID"
+	errReadRoleID         = "cannot read AppRole role-id"
 )
 
 func Setup(mgr ctrl.Manager, o controller.Options) error {
@@ -107,6 +108,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, err
 	}
 
+	if cr.Status.AtProvider.RoleID == "" {
+		if roleID, err := e.service.ReadAppRoleRoleID(ctx, params.Backend, params.RoleName); err == nil {
+			cr.Status.AtProvider.RoleID = roleID
+		}
+	}
+
 	return managed.ExternalObservation{
 		ResourceExists:   true,
 		ResourceUpToDate: true,
@@ -145,12 +152,19 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	meta.SetExternalName(cr, secretIDAccessor)
 
-	return managed.ExternalCreation{
-		ConnectionDetails: managed.ConnectionDetails{
-			"secret_id":          []byte(secretID),
-			"secret_id_accessor": []byte(secretIDAccessor),
-		},
-	}, nil
+	connectionDetails := managed.ConnectionDetails{
+		"secret_id":          []byte(secretID),
+		"secret_id_accessor": []byte(secretIDAccessor),
+	}
+
+	roleID, err := e.service.ReadAppRoleRoleID(ctx, params.Backend, params.RoleName)
+	if err != nil {
+		return managed.ExternalCreation{}, errors.Wrap(err, errReadRoleID)
+	}
+	cr.Status.AtProvider.RoleID = roleID
+	connectionDetails["role_id"] = []byte(roleID)
+
+	return managed.ExternalCreation{ConnectionDetails: connectionDetails}, nil
 }
 
 func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
@@ -197,12 +211,19 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 
 	meta.SetExternalName(cr, secretIDAccessor)
 
-	return managed.ExternalUpdate{
-		ConnectionDetails: managed.ConnectionDetails{
-			"secret_id":          []byte(secretID),
-			"secret_id_accessor": []byte(secretIDAccessor),
-		},
-	}, nil
+	connectionDetails := managed.ConnectionDetails{
+		"secret_id":          []byte(secretID),
+		"secret_id_accessor": []byte(secretIDAccessor),
+	}
+
+	roleID, err := e.service.ReadAppRoleRoleID(ctx, params.Backend, params.RoleName)
+	if err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errReadRoleID)
+	}
+	cr.Status.AtProvider.RoleID = roleID
+	connectionDetails["role_id"] = []byte(roleID)
+
+	return managed.ExternalUpdate{ConnectionDetails: connectionDetails}, nil
 }
 
 func (e *external) getSecretID(ctx context.Context, cr *v1beta1.AppRoleSecretID) (string, string) {

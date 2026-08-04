@@ -29,16 +29,23 @@ type TransitKeySpec struct {
 }
 
 type TransitKeyParameters struct {
-	Backend               string   `json:"backend"`
-	Name                  string   `json:"name"`
-	Type                  string   `json:"type,omitempty"`
-	ConvergentEncryption  *bool    `json:"convergentEncryption,omitempty"`
-	Derived               *bool    `json:"derived,omitempty"`
-	Exportable            *bool    `json:"exportable,omitempty"`
-	AllowPlaintextBackup  *bool    `json:"allowPlaintextBackup,omitempty"`
-	AutoRotatePeriod      string   `json:"autoRotatePeriod,omitempty"`
-	MinDecryptionVersion  *int     `json:"minDecryptionVersion,omitempty"`
-	MinEncryptionVersion  *int     `json:"minEncryptionVersion,omitempty"`
+	Backend              string `json:"backend"`
+	Name                 string `json:"name"`
+	Type                 string `json:"type,omitempty"`
+	ConvergentEncryption *bool  `json:"convergentEncryption,omitempty"`
+	Derived              *bool  `json:"derived,omitempty"`
+	Exportable           *bool  `json:"exportable,omitempty"`
+	AllowPlaintextBackup *bool  `json:"allowPlaintextBackup,omitempty"`
+	AutoRotatePeriod     string `json:"autoRotatePeriod,omitempty"`
+	MinDecryptionVersion *int   `json:"minDecryptionVersion,omitempty"`
+	MinEncryptionVersion *int   `json:"minEncryptionVersion,omitempty"`
+	// RotateToVersion is the desired latest key version. When set, the
+	// controller rotates the key until its latest version reaches this value.
+	// Each rotation increments the latest version by one, so setting this to a
+	// value greater than the current latest version triggers one or more
+	// rotations. Leave unset to disable explicit rotation management (e.g. rely
+	// only on AutoRotatePeriod).
+	RotateToVersion *int `json:"rotateToVersion,omitempty"`
 }
 
 type TransitKeyStatus struct {

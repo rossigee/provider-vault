@@ -81,7 +81,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotDatabaseBackend)
 	}
 
-	_, err := e.service.GetDatabaseBackendConfig(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name)
+	data, err := e.service.GetDatabaseBackendConfig(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name)
 	if err != nil {
 		if clients.IsNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -90,9 +90,32 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	cr.Status.AtProvider.Name = cr.Spec.ForProvider.Name
+
+	p := cr.Spec.ForProvider
+	upToDate := !clients.DriftedString(data, "connection_url", p.ConnectionURL)
+
+	if clients.DriftedString(data, "username", p.Username) {
+		upToDate = false
+	}
+	if clients.DriftedString(data, "plugin_name", p.PluginName) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "allowed_roles", p.AllowedRoles) {
+		upToDate = false
+	}
+	if clients.DriftedDuration(data, "max_connection_lifetime", p.MaxConnectionLifetime) {
+		upToDate = false
+	}
+	if clients.DriftedInt(data, "max_idle_connections", p.MaxIdleConnections) {
+		upToDate = false
+	}
+	if clients.DriftedInt(data, "max_open_connections", p.MaxOpenConnections) {
+		upToDate = false
+	}
+
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: true,
+		ResourceUpToDate: upToDate,
 	}, nil
 }
 

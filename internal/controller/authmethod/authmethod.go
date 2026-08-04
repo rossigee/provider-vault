@@ -81,7 +81,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotAuthMethod)
 	}
 
-	_, err := e.service.GetAuthMethod(ctx, cr.Spec.ForProvider.MountPath)
+	data, err := e.service.GetAuthMethod(ctx, cr.Spec.ForProvider.MountPath)
 	if err != nil {
 		if clients.IsNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -90,9 +90,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	cr.Status.AtProvider.MountPath = cr.Spec.ForProvider.MountPath
+
+	upToDate := !clients.DriftedString(data, "type", cr.Spec.ForProvider.Type)
+
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: true,
+		ResourceUpToDate: upToDate,
 	}, nil
 }
 

@@ -55,11 +55,35 @@ spec:
                     items:
                       type: string
                     type: array
+                  crlAutoRebuild:
+                    description: CrlAutoRebuild enables automatic rebuilding of the
+                      CRL.
+                    type: boolean
+                  crlAutoRebuildGracePeriod:
+                    description: |-
+                      CrlAutoRebuildGracePeriod is the grace period for automatic CRL rebuilds
+                      (e.g. "12h").
+                    type: string
+                  crlDeltaRebuildInterval:
+                    description: |-
+                      CrlDeltaRebuildInterval is the interval between delta CRL rebuilds (e.g.
+                      "15m").
+                    type: string
+                  crlDisable:
+                    description: CrlDisable disables the generation of CRL entries.
+                    type: boolean
                   crlDistributionPoints:
                     description: CrlDistributionPoints URLs for CRL distribution.
                     items:
                       type: string
                     type: array
+                  crlEnableDelta:
+                    description: CrlEnableDelta enables delta CRL generation.
+                    type: boolean
+                  crlExpiry:
+                    description: CrlExpiry is the time until expiration of the CRL
+                      (e.g. "72h").
+                    type: string
                   excludeCnFromSans:
                     description: ExcludeCnFromSans excludes the common name from subject
                       alternative names.
@@ -83,6 +107,9 @@ spec:
                   maxPathLength:
                     description: MaxPathLength for intermediate CA certificates.
                     type: integer
+                  ocspDisable:
+                    description: OcspDisable disables the OCSP responder.
+                    type: boolean
                   ocspServers:
                     description: OcspServers URLs for OCSP responders.
                     items:

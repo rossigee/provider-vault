@@ -81,7 +81,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotSecretBackendRole)
 	}
 
-	_, err := e.service.GetSecretBackendRole(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name)
+	data, err := e.service.GetSecretBackendRole(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name)
 	if err != nil {
 		if clients.IsNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -90,9 +90,95 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	cr.Status.AtProvider.Name = cr.Spec.ForProvider.Name
+
+	p := cr.Spec.ForProvider
+	upToDate := !clients.DriftedStringSlice(data, "allowed_domains", p.AllowedDomains)
+
+	if clients.DriftedBool(data, "allow_subdomains", p.AllowSubdomains) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "allow_bare_domains", p.AllowBareDomains) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "allow_glob_domains", p.AllowGlobDomains) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "allow_any_name", p.AllowAnyName) {
+		upToDate = false
+	}
+	if clients.DriftedString(data, "key_type", p.KeyType) {
+		upToDate = false
+	}
+	if clients.DriftedInt(data, "key_bits", p.KeyBits) {
+		upToDate = false
+	}
+	if clients.DriftedInt(data, "signature_bits", p.SignatureBits) {
+		upToDate = false
+	}
+	if clients.DriftedDuration(data, "ttl", p.TTL) {
+		upToDate = false
+	}
+	if clients.DriftedDuration(data, "max_ttl", p.MaxTTL) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "generate_lease", p.GenerateLease) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "enforce_hostnames", p.EnforceHostnames) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "allow_ip_sans", p.AllowIPSans) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "allow_localhost", p.AllowLocalhostFlag) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "allow_wildcard_certificates", p.AllowWildcardCertificates) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "server_flag", p.ServerFlag) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "client_flag", p.ClientFlag) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "organization", p.Organization) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "ou", p.Ou) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "country", p.Country) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "locality", p.Locality) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "province", p.Province) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "street_address", p.StreetAddress) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "postal_code", p.PostalCode) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "no_store", p.NoStore) {
+		upToDate = false
+	}
+	if clients.DriftedBool(data, "require_cn", p.RequireCN) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "allowed_other_sans", p.AllowedOtherSans) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "allowed_serial_numbers", p.AllowedSerialNumbers) {
+		upToDate = false
+	}
+
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: true,
+		ResourceUpToDate: upToDate,
 	}, nil
 }
 

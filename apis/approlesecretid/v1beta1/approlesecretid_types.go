@@ -49,6 +49,9 @@ type AppRoleSecretIDStatus struct {
 type AppRoleSecretIDObservation struct {
 	SecretIDAccessor string `json:"secretIdAccessor,omitempty"`
 	SecretID         string `json:"secretId,omitempty"`
+	// RoleID is the public identifier of the AppRole role. It is static per
+	// role and is combined with a SecretID to authenticate against Vault.
+	RoleID string `json:"roleId,omitempty"`
 }
 
 // +kubebuilder:object:root=true

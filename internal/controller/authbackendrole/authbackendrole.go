@@ -81,7 +81,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotAuthBackendRole)
 	}
 
-	_, err := e.service.GetAuthBackendRole(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.RoleName)
+	data, err := e.service.GetAuthBackendRole(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.RoleName)
 	if err != nil {
 		if clients.IsNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -90,9 +90,62 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	cr.Status.AtProvider.RoleName = cr.Spec.ForProvider.RoleName
+
+	p := cr.Spec.ForProvider
+	upToDate := !clients.DriftedString(data, "role_type", p.RoleType)
+
+	if clients.DriftedStringSlice(data, "bound_audiences", p.BoundAudiences) {
+		upToDate = false
+	}
+	if clients.DriftedString(data, "bound_subject", p.BoundSubject) {
+		upToDate = false
+	}
+	if clients.DriftedString(data, "user_claim", p.UserClaim) {
+		upToDate = false
+	}
+	if clients.DriftedString(data, "groups_claim", p.GroupsClaim) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "policies", p.Policies) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "token_policies", p.TokenPolicies) {
+		upToDate = false
+	}
+	if clients.DriftedIntDuration(data, "token_ttl", p.TokenTTL) {
+		upToDate = false
+	}
+	if clients.DriftedIntDuration(data, "token_max_ttl", p.TokenMaxTTL) {
+		upToDate = false
+	}
+	if clients.DriftedIntDuration(data, "token_period", p.TokenPeriod) {
+		upToDate = false
+	}
+	if clients.DriftedInt(data, "token_num_uses", p.TokenNumUses) {
+		upToDate = false
+	}
+	if clients.DriftedString(data, "token_type", p.TokenType) {
+		upToDate = false
+	}
+	if clients.DriftedIntDuration(data, "secret_id_ttl", p.SecretIDTTL) {
+		upToDate = false
+	}
+	if clients.DriftedInt(data, "secret_id_num_uses", p.SecretIDNumUses) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "token_bound_cidrs", p.TokenBoundCIDRs) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "allowed_redirect_uris", p.AllowedRedirectURIs) {
+		upToDate = false
+	}
+	if clients.DriftedInt(data, "clock_skew_leeway", p.ClockSkewLeeway) {
+		upToDate = false
+	}
+
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: true,
+		ResourceUpToDate: upToDate,
 	}, nil
 }
 

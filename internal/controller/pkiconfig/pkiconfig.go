@@ -23,8 +23,38 @@ const (
 	errGetCreds      = "cannot get credentials"
 	errGenerateRoot  = "cannot generate PKI root CA"
 	errConfigURLs    = "cannot configure PKI URLs"
+	errConfigCRL     = "cannot configure PKI CRL"
 	errDeletePKIConf = "cannot delete PKI config"
 )
+
+func buildPKICRLParams(p v1beta1.PKIConfigParameters) map[string]interface{} {
+	params := make(map[string]interface{})
+	if p.CrlExpiry != "" {
+		params["expiry"] = p.CrlExpiry
+	}
+	if p.CrlDisable != nil {
+		params["disable"] = *p.CrlDisable
+	}
+	if p.OcspDisable != nil {
+		params["ocsp_disable"] = *p.OcspDisable
+	}
+	if p.CrlAutoRebuild != nil {
+		params["auto_rebuild"] = *p.CrlAutoRebuild
+	}
+	if p.CrlAutoRebuildGracePeriod != "" {
+		params["auto_rebuild_grace_period"] = p.CrlAutoRebuildGracePeriod
+	}
+	if p.CrlEnableDelta != nil {
+		params["enable_delta"] = *p.CrlEnableDelta
+	}
+	if p.CrlDeltaRebuildInterval != "" {
+		params["delta_rebuild_interval"] = p.CrlDeltaRebuildInterval
+	}
+	if len(params) == 0 {
+		return nil
+	}
+	return params
+}
 
 func Setup(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1beta1.PKIConfigKind)
@@ -92,9 +122,62 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 
 	cr.Status.AtProvider.Backend = cr.Spec.ForProvider.Backend
 	cr.Status.AtProvider.Certificate = ca
+
+	p := cr.Spec.ForProvider
+	upToDate := true
+	if len(p.IssuingCertificates) > 0 || len(p.CrlDistributionPoints) > 0 || len(p.OcspServers) > 0 {
+		urls, err := e.service.GetPKIURLs(ctx, p.Backend)
+		if err != nil {
+			if clients.IsNotFound(err) {
+				return managed.ExternalObservation{ResourceExists: false}, nil
+			}
+			return managed.ExternalObservation{}, err
+		}
+		if clients.DriftedStringSlice(urls, "issuing_certificates", p.IssuingCertificates) {
+			upToDate = false
+		}
+		if clients.DriftedStringSlice(urls, "crl_distribution_points", p.CrlDistributionPoints) {
+			upToDate = false
+		}
+		if clients.DriftedStringSlice(urls, "ocsp_servers", p.OcspServers) {
+			upToDate = false
+		}
+	}
+
+	if buildPKICRLParams(p) != nil {
+		crl, err := e.service.GetPKICRLConfig(ctx, p.Backend)
+		if err != nil {
+			if clients.IsNotFound(err) {
+				return managed.ExternalObservation{ResourceExists: false}, nil
+			}
+			return managed.ExternalObservation{}, err
+		}
+		if clients.DriftedDuration(crl, "expiry", p.CrlExpiry) {
+			upToDate = false
+		}
+		if clients.DriftedBool(crl, "disable", p.CrlDisable) {
+			upToDate = false
+		}
+		if clients.DriftedBool(crl, "ocsp_disable", p.OcspDisable) {
+			upToDate = false
+		}
+		if clients.DriftedBool(crl, "auto_rebuild", p.CrlAutoRebuild) {
+			upToDate = false
+		}
+		if clients.DriftedDuration(crl, "auto_rebuild_grace_period", p.CrlAutoRebuildGracePeriod) {
+			upToDate = false
+		}
+		if clients.DriftedBool(crl, "enable_delta", p.CrlEnableDelta) {
+			upToDate = false
+		}
+		if clients.DriftedDuration(crl, "delta_rebuild_interval", p.CrlDeltaRebuildInterval) {
+			upToDate = false
+		}
+	}
+
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: true,
+		ResourceUpToDate: upToDate,
 	}, nil
 }
 
@@ -170,6 +253,12 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 		}
 	}
 
+	if params := buildPKICRLParams(p); params != nil {
+		if err := e.service.ConfigurePKICRL(ctx, p.Backend, params); err != nil {
+			return managed.ExternalCreation{}, errors.Wrap(err, errConfigCRL)
+		}
+	}
+
 	return managed.ExternalCreation{}, nil
 }
 
@@ -184,6 +273,12 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if len(p.IssuingCertificates) > 0 || len(p.CrlDistributionPoints) > 0 || len(p.OcspServers) > 0 {
 		if err := e.service.ConfigurePKIURLs(ctx, p.Backend, p.IssuingCertificates, p.CrlDistributionPoints, p.OcspServers); err != nil {
 			return managed.ExternalUpdate{}, errors.Wrap(err, errConfigURLs)
+		}
+	}
+
+	if params := buildPKICRLParams(p); params != nil {
+		if err := e.service.ConfigurePKICRL(ctx, p.Backend, params); err != nil {
+			return managed.ExternalUpdate{}, errors.Wrap(err, errConfigCRL)
 		}
 	}
 

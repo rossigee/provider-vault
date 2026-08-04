@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/crossplane/crossplane-runtime/v2/pkg/meta"
@@ -76,7 +77,11 @@ func TestObserve_NoExternalName(t *testing.T) {
 
 func TestObserve_WithAccessor(t *testing.T) {
 	e, srv, cr := newTestHarness(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/auth/approle/role/myrole/secret-id-accessor/lookup" {
+		switch {
+		case r.URL.Path == "/v1/auth/approle/role/myrole/role-id":
+			_, _ = fmt.Fprint(w, `{"data":{"role_id":"role-123"}}`)
+			return
+		case r.URL.Path != "/v1/auth/approle/role/myrole/secret-id-accessor/lookup":
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		var body map[string]string
@@ -84,7 +89,7 @@ func TestObserve_WithAccessor(t *testing.T) {
 		if body["secret_id_accessor"] != "test-accessor" {
 			t.Errorf("accessor = %s", body["secret_id_accessor"])
 		}
-_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"test-accessor"}}`)
+		_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"test-accessor"}}`)
 	})
 	defer srv.Close()
 
@@ -99,6 +104,9 @@ _, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"test-acce
 	}
 	if !obs.ResourceUpToDate {
 		t.Error("expected ResourceUpToDate=true")
+	}
+	if cr.Status.AtProvider.RoleID != "role-123" {
+		t.Errorf("RoleID = %s", cr.Status.AtProvider.RoleID)
 	}
 }
 
@@ -124,7 +132,11 @@ _, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
 
 func TestCreate(t *testing.T) {
 	e, srv, cr := newTestHarness(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/auth/approle/role/myrole/secret-id" {
+		switch {
+		case r.URL.Path == "/v1/auth/approle/role/myrole/role-id":
+			_, _ = fmt.Fprint(w, `{"data":{"role_id":"role-123"}}`)
+			return
+		case r.URL.Path != "/v1/auth/approle/role/myrole/secret-id":
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		var body map[string]interface{}
@@ -132,7 +144,7 @@ func TestCreate(t *testing.T) {
 		if body["metadata"] != `{"env":"test"}` {
 			t.Errorf("metadata = %v", body["metadata"])
 		}
-_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid-new","secret_id_accessor":"acc-new"}}`)
+		_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid-new","secret_id_accessor":"acc-new"}}`)
 	})
 	defer srv.Close()
 
@@ -146,6 +158,9 @@ _, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid-new","secret_id_accessor":"acc-n
 	if string(creation.ConnectionDetails["secret_id_accessor"]) != "acc-new" {
 		t.Errorf("secret_id_accessor = %s", creation.ConnectionDetails["secret_id_accessor"])
 	}
+	if string(creation.ConnectionDetails["role_id"]) != "role-123" {
+		t.Errorf("role_id = %s", creation.ConnectionDetails["role_id"])
+	}
 	if meta.GetExternalName(cr) != "acc-new" {
 		t.Errorf("external-name = %s", meta.GetExternalName(cr))
 	}
@@ -153,12 +168,16 @@ _, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid-new","secret_id_accessor":"acc-n
 
 func TestCreate_WithMetadata(t *testing.T) {
 	e, srv, cr := newTestHarness(t, func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/role-id") {
+			_, _ = fmt.Fprint(w, `{"data":{"role_id":"role-123"}}`)
+			return
+		}
 		var body map[string]interface{}
 		_ = json.NewDecoder(r.Body).Decode(&body)
 		if body["metadata"] != `{"env":"test"}` {
 			t.Errorf("metadata = %v", body["metadata"])
 		}
-_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"acc"}}`)
+		_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"acc"}}`)
 	})
 	defer srv.Close()
 
@@ -170,10 +189,14 @@ _, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"acc"}}`)
 
 func TestCreate_CustomBackendRole(t *testing.T) {
 	e, srv, cr := newTestHarness(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/auth/custom/role/custom-role/secret-id" {
+		switch {
+		case r.URL.Path == "/v1/auth/custom/role/custom-role/role-id":
+			_, _ = fmt.Fprint(w, `{"data":{"role_id":"role-123"}}`)
+			return
+		case r.URL.Path != "/v1/auth/custom/role/custom-role/secret-id":
 			t.Fatalf("path = %s, want /v1/auth/custom/role/custom-role/secret-id", r.URL.Path)
 		}
-_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"acc"}}`)
+		_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"acc"}}`)
 	})
 	defer srv.Close()
 	cr.Spec.ForProvider.Backend = "custom"
@@ -198,7 +221,12 @@ func TestUpdate_DestroyOldByAccessor(t *testing.T) {
 			}
 			w.WriteHeader(204)
 		case 2:
-	_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid-new","secret_id_accessor":"acc-new"}}`)
+			_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid-new","secret_id_accessor":"acc-new"}}`)
+		case 3:
+			if r.URL.Path != "/v1/auth/approle/role/myrole/role-id" {
+				t.Errorf("role-id path = %s", r.URL.Path)
+			}
+			_, _ = fmt.Fprint(w, `{"data":{"role_id":"role-123"}}`)
 		}
 	})
 	defer srv.Close()
@@ -212,8 +240,11 @@ func TestUpdate_DestroyOldByAccessor(t *testing.T) {
 	if string(update.ConnectionDetails["secret_id"]) != "sid-new" {
 		t.Errorf("secret_id = %s", update.ConnectionDetails["secret_id"])
 	}
-	if callCount != 2 {
-		t.Errorf("expected 2 Vault calls, got %d", callCount)
+	if string(update.ConnectionDetails["role_id"]) != "role-123" {
+		t.Errorf("role_id = %s", update.ConnectionDetails["role_id"])
+	}
+	if callCount != 3 {
+		t.Errorf("expected 3 Vault calls, got %d", callCount)
 	}
 }
 

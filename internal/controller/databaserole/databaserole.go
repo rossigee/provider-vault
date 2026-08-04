@@ -81,7 +81,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotDatabaseRole)
 	}
 
-	_, err := e.service.GetDatabaseRole(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name)
+	data, err := e.service.GetDatabaseRole(ctx, cr.Spec.ForProvider.Backend, cr.Spec.ForProvider.Name)
 	if err != nil {
 		if clients.IsNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -90,9 +90,32 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	cr.Status.AtProvider.Name = cr.Spec.ForProvider.Name
+
+	p := cr.Spec.ForProvider
+	upToDate := !clients.DriftedString(data, "db_name", p.DBName)
+
+	if clients.DriftedStringSlice(data, "creation_statements", p.CreationStatements) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "revocation_statements", p.RevocationStatements) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "rollback_statements", p.RollbackStatements) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "renew_statements", p.RenewStatements) {
+		upToDate = false
+	}
+	if clients.DriftedDuration(data, "default_ttl", p.DefaultTTL) {
+		upToDate = false
+	}
+	if clients.DriftedDuration(data, "max_ttl", p.MaxTTL) {
+		upToDate = false
+	}
+
 	return managed.ExternalObservation{
 		ResourceExists:   true,
-		ResourceUpToDate: true,
+		ResourceUpToDate: upToDate,
 	}, nil
 }
 

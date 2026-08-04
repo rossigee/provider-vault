@@ -432,6 +432,47 @@ func (c *VaultClient) ConfigurePKIURLs(ctx context.Context, backend string, issu
 	return err
 }
 
+// GetPKIURLs returns the PKI URL configuration for the supplied backend.
+func (c *VaultClient) GetPKIURLs(ctx context.Context, backend string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/%s/config/urls", backend)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse PKI URLs response")
+	}
+	return result.Data, nil
+}
+
+// ConfigurePKICRL writes the CRL/OCSP configuration for the supplied PKI
+// backend.
+func (c *VaultClient) ConfigurePKICRL(ctx context.Context, backend string, params map[string]interface{}) error {
+	apiPath := fmt.Sprintf("/v1/%s/config/crl", backend)
+	_, err := c.request(ctx, http.MethodPost, apiPath, params)
+	return err
+}
+
+// GetPKICRLConfig returns the CRL/OCSP configuration for the supplied PKI
+// backend.
+func (c *VaultClient) GetPKICRLConfig(ctx context.Context, backend string) (map[string]interface{}, error) {
+	apiPath := fmt.Sprintf("/v1/%s/config/crl", backend)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse PKI CRL config response")
+	}
+	return result.Data, nil
+}
+
 // Certificate
 
 func (c *VaultClient) IssueCertificate(ctx context.Context, backend, role, commonName string, params map[string]interface{}) (map[string]interface{}, error) {
@@ -526,6 +567,14 @@ func (c *VaultClient) DeleteTransitKey(ctx context.Context, backend, name string
 func (c *VaultClient) ConfigureTransitKey(ctx context.Context, backend, name string, params map[string]interface{}) error {
 	apiPath := fmt.Sprintf("/v1/%s/keys/%s/config", backend, name)
 	_, err := c.request(ctx, http.MethodPost, apiPath, params)
+	return err
+}
+
+// RotateTransitKey rotates the version of the supplied transit key. Each call
+// increments the key's latest version by one.
+func (c *VaultClient) RotateTransitKey(ctx context.Context, backend, name string) error {
+	apiPath := fmt.Sprintf("/v1/%s/keys/%s/rotate", backend, name)
+	_, err := c.request(ctx, http.MethodPost, apiPath, nil)
 	return err
 }
 
@@ -756,6 +805,25 @@ func (c *VaultClient) DestroyAppRoleSecretIDByAccessor(ctx context.Context, back
 		"secret_id_accessor": accessor,
 	})
 	return err
+}
+
+// ReadAppRoleRoleID returns the role-id for the supplied AppRole. The role-id
+// is the public identifier used together with a SecretID to authenticate
+// against the AppRole auth method.
+func (c *VaultClient) ReadAppRoleRoleID(ctx context.Context, backend, roleName string) (string, error) {
+	apiPath := fmt.Sprintf("/v1/auth/%s/role/%s/role-id", backend, roleName)
+	resp, err := c.request(ctx, http.MethodGet, apiPath, nil)
+	if err != nil {
+		return "", err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return "", errors.Wrap(err, "failed to parse role-id response")
+	}
+	roleID, _ := result.Data["role_id"].(string)
+	return roleID, nil
 }
 
 // Helper to read token from k8s secret and create client from ProviderConfig

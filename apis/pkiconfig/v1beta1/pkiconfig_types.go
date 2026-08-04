@@ -67,6 +67,22 @@ type PKIConfigParameters struct {
 	CrlDistributionPoints []string `json:"crlDistributionPoints,omitempty"`
 	// OcspServers URLs for OCSP responders.
 	OcspServers []string `json:"ocspServers,omitempty"`
+	// CrlExpiry is the time until expiration of the CRL (e.g. "72h").
+	CrlExpiry string `json:"crlExpiry,omitempty"`
+	// CrlDisable disables the generation of CRL entries.
+	CrlDisable *bool `json:"crlDisable,omitempty"`
+	// OcspDisable disables the OCSP responder.
+	OcspDisable *bool `json:"ocspDisable,omitempty"`
+	// CrlAutoRebuild enables automatic rebuilding of the CRL.
+	CrlAutoRebuild *bool `json:"crlAutoRebuild,omitempty"`
+	// CrlAutoRebuildGracePeriod is the grace period for automatic CRL rebuilds
+	// (e.g. "12h").
+	CrlAutoRebuildGracePeriod string `json:"crlAutoRebuildGracePeriod,omitempty"`
+	// CrlEnableDelta enables delta CRL generation.
+	CrlEnableDelta *bool `json:"crlEnableDelta,omitempty"`
+	// CrlDeltaRebuildInterval is the interval between delta CRL rebuilds (e.g.
+	// "15m").
+	CrlDeltaRebuildInterval string `json:"crlDeltaRebuildInterval,omitempty"`
 }
 
 type PKIConfigStatus struct {

@@ -61,6 +61,15 @@ spec:
                     type: integer
                   name:
                     type: string
+                  rotateToVersion:
+                    description: |-
+                      RotateToVersion is the desired latest key version. When set, the
+                      controller rotates the key until its latest version reaches this value.
+                      Each rotation increments the latest version by one, so setting this to a
+                      value greater than the current latest version triggers one or more
+                      rotations. Leave unset to disable explicit rotation management (e.g. rely
+                      only on AutoRotatePeriod).
+                    type: integer
                   type:
                     type: string
                 required:

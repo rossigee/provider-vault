@@ -2,7 +2,6 @@ package identityentity
 
 import (
 	"context"
-	"reflect"
 
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -103,52 +102,19 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	}
 
 	p := cr.Spec.ForProvider
-	upToDate := true
+	upToDate := !clients.DriftedBool(data, "disabled", p.Disabled)
 
-	if p.Disabled != nil {
-		if b, ok := data["disabled"].(bool); ok && b != *p.Disabled {
-			upToDate = false
-		}
+	if clients.DriftedStringSlice(data, "policies", p.Policies) {
+		upToDate = false
 	}
-	if len(p.Policies) > 0 {
-		if observed, ok := data["policies"].([]interface{}); ok {
-			if !reflect.DeepEqual(specToStringSlice(observed), p.Policies) {
-				upToDate = false
-			}
-		}
-	}
-	if len(p.Metadata) > 0 {
-		if observed, ok := data["metadata"].(map[string]interface{}); ok {
-			if !reflect.DeepEqual(interfaceToStringMap(observed), p.Metadata) {
-				upToDate = false
-			}
-		}
+	if clients.DriftedStringMap(data, "metadata", p.Metadata) {
+		upToDate = false
 	}
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,
 		ResourceUpToDate: upToDate,
 	}, nil
-}
-
-func specToStringSlice(in []interface{}) []string {
-	out := make([]string, 0, len(in))
-	for _, v := range in {
-		if s, ok := v.(string); ok {
-			out = append(out, s)
-		}
-	}
-	return out
-}
-
-func interfaceToStringMap(in map[string]interface{}) map[string]string {
-	out := make(map[string]string, len(in))
-	for k, v := range in {
-		if s, ok := v.(string); ok {
-			out[k] = s
-		}
-	}
-	return out
 }
 
 func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
