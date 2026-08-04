@@ -1,0 +1,16 @@
+apiVersion: policy.vault.m.crossplane.io/v1beta1
+kind: Policy
+metadata:
+  name: myapp-policy
+spec:
+  forProvider:
+    name: myapp-read
+    policy: |
+      path "secret/data/myapp/*" {
+        capabilities = ["read", "list"]
+      }
+      path "pki/issue/myapp" {
+        capabilities = ["create", "update"]
+      }
+  providerConfigRef:
+    name: vault-provider

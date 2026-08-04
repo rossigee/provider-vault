@@ -1,0 +1,11 @@
+apiVersion: kubernetesauthconfig.vault.m.crossplane.io/v1beta1
+kind: KubernetesAuthConfig
+metadata:
+  name: k8s-config
+spec:
+  forProvider:
+    backend: kubernetes
+    kubernetesHost: "https://kubernetes.default.svc"
+    useLocalCa: true
+  providerConfigRef:
+    name: vault-provider

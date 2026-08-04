@@ -1,0 +1,11 @@
+apiVersion: authmethod.vault.m.crossplane.io/v1beta1
+kind: AuthMethod
+metadata:
+  name: userpass
+spec:
+  forProvider:
+    path: userpass
+    type: userpass
+    description: "Username/password auth method"
+  providerConfigRef:
+    name: vault-provider
