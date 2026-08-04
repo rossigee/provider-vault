@@ -18,6 +18,11 @@ A Crossplane v2 provider for managing HashiCorp Vault resources with complete na
 | [AuthBackendRole](resources/authbackendrole.md) | `authbackendrole.vault.m.crossplane.io` | JWT/AppRole/Kubernetes auth roles for identity-to-policy mapping |
 | [KubernetesAuthConfig](resources/kubernetesauthconfig.md) | `kubernetesauthconfig.vault.m.crossplane.io` | Kubernetes auth method configuration with token reviewers |
 | [AppRoleSecretID](resources/approlesecretid.md) | `approlesecretid.vault.m.crossplane.io` | Generate and manage AppRole SecretIDs |
+| [JWTAuthConfig](resources/jwtauthconfig.md) | `jwtauthconfig.vault.m.crossplane.io` | JWT/OIDC auth method configuration |
+| [LDAPAuthConfig](resources/ldapauthconfig.md) | `ldapauthconfig.vault.m.crossplane.io` | LDAP auth method configuration |
+| [AWSAuthConfig](resources/awsauthconfig.md) | `awsauthconfig.vault.m.crossplane.io` | AWS IAM auth method configuration |
+| [AzureAuthConfig](resources/azureauthconfig.md) | `azureauthconfig.vault.m.crossplane.io` | Azure MSI auth method configuration |
+| [GCPAuthConfig](resources/gcpauthconfig.md) | `gcpauthconfig.vault.m.crossplane.io` | GCP GCE/GKE auth method configuration |
 
 ### Secrets & Encryption
 
@@ -50,10 +55,19 @@ A Crossplane v2 provider for managing HashiCorp Vault resources with complete na
 | [Policy](resources/policy.md) | `policy.vault.m.crossplane.io` | ACL policy management |
 | [IdentityEntity](resources/identityentity.md) | `identityentity.vault.m.crossplane.io` | Identity entity management |
 | [IdentityGroup](resources/identitygroup.md) | `identitygroup.vault.m.crossplane.io` | Identity group management |
+| [AuditDevice](resources/auditdevice.md) | `auditdevice.vault.m.crossplane.io` | Audit device configuration |
+
+### Isolation & Governance
+
+| Resource | API Group | Description |
+|----------|-----------|-------------|
+| [VaultNamespace](resources/namespaces.md) | `namespaces.vault.m.crossplane.io` | Vault namespace management |
+| [Quota](resources/quota.md) | `quota.vault.m.crossplane.io` | Rate and lease quota limits |
+| [LeaseRenewal](resources/leaserenewal.md) | `leaserenewal.vault.m.crossplane.io` | Automatic lease renewal |
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-vault:v0.2.7`
+- **Primary**: `ghcr.io/rossigee/provider-vault:v0.2.31`
 
 ## Repository
 
