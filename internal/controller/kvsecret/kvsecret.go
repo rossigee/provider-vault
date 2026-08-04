@@ -82,7 +82,7 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotKVSecret)
 	}
 
-	data, err := e.service.GetKVSecret(ctx, cr.Spec.ForProvider.Path, cr.Spec.ForProvider.MountPath)
+	data, err := e.service.GetKVSecret(ctx, cr.Spec.ForProvider.Path, cr.Spec.ForProvider.MountPath, cr.Spec.ForProvider.Version)
 	if err != nil {
 		if clients.IsNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -102,7 +102,7 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotKVSecret)
 	}
-	if err := e.service.CreateKVSecret(ctx, cr.Spec.ForProvider.Path, cr.Spec.ForProvider.MountPath, cr.Spec.ForProvider.Data); err != nil {
+	if err := e.service.CreateKVSecret(ctx, cr.Spec.ForProvider.Path, cr.Spec.ForProvider.MountPath, cr.Spec.ForProvider.Data, cr.Spec.ForProvider.Version); err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateKVSecret)
 	}
 	return managed.ExternalCreation{}, nil
@@ -113,7 +113,7 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotKVSecret)
 	}
-	if err := e.service.UpdateKVSecret(ctx, cr.Spec.ForProvider.Path, cr.Spec.ForProvider.MountPath, cr.Spec.ForProvider.Data); err != nil {
+	if err := e.service.UpdateKVSecret(ctx, cr.Spec.ForProvider.Path, cr.Spec.ForProvider.MountPath, cr.Spec.ForProvider.Data, cr.Spec.ForProvider.Version); err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errCreateKVSecret)
 	}
 	return managed.ExternalUpdate{}, nil
@@ -124,7 +124,7 @@ func (e *external) Delete(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalDelete{}, errors.New(errNotKVSecret)
 	}
-	if err := e.service.DeleteKVSecret(ctx, cr.Spec.ForProvider.Path, cr.Spec.ForProvider.MountPath); err != nil {
+	if err := e.service.DeleteKVSecret(ctx, cr.Spec.ForProvider.Path, cr.Spec.ForProvider.MountPath, cr.Spec.ForProvider.Version); err != nil {
 		return managed.ExternalDelete{}, errors.Wrap(err, errDeleteKVSecret)
 	}
 	return managed.ExternalDelete{}, nil

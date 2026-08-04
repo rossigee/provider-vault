@@ -279,17 +279,17 @@ func TestCreateKVSecret(t *testing.T) {
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		var body map[string]interface{}
-	_ = json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		d := body["data"].(map[string]interface{})
 		if d["key1"] != "val1" {
 			t.Errorf("data = %v", body)
 		}
 		w.WriteHeader(200)
-_, _ = fmt.Fprint(w, `{}`)
+		_, _ = fmt.Fprint(w, `{}`)
 	})
 	defer srv.Close()
 
-	if err := client.CreateKVSecret(context.Background(), "mysecret", "secret", map[string]string{"key1": "val1"}); err != nil {
+	if err := client.CreateKVSecret(context.Background(), "mysecret", "secret", map[string]string{"key1": "val1"}, nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -302,11 +302,11 @@ func TestGetKVSecret(t *testing.T) {
 		if r.URL.Path != "/v1/secret/data/mysecret" {
 			t.Errorf("path = %s", r.URL.Path)
 		}
-_, _ = fmt.Fprint(w, `{"data":{"data":{"key1":"val1"}}}`)
+		_, _ = fmt.Fprint(w, `{"data":{"data":{"key1":"val1"}}}`)
 	})
 	defer srv.Close()
 
-	data, err := client.GetKVSecret(context.Background(), "mysecret", "secret")
+	data, err := client.GetKVSecret(context.Background(), "mysecret", "secret", nil)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -318,11 +318,11 @@ _, _ = fmt.Fprint(w, `{"data":{"data":{"key1":"val1"}}}`)
 func TestGetKVSecret_Missing(t *testing.T) {
 	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
-_, _ = fmt.Fprint(w, `{}`)
+		_, _ = fmt.Fprint(w, `{}`)
 	})
 	defer srv.Close()
 
-	_, err := client.GetKVSecret(context.Background(), "nope", "secret")
+	_, err := client.GetKVSecret(context.Background(), "nope", "secret", nil)
 	if err == nil {
 		t.Error("expected error for missing secret")
 	}
@@ -340,7 +340,7 @@ func TestDeleteKVSecret(t *testing.T) {
 	})
 	defer srv.Close()
 
-	if err := client.DeleteKVSecret(context.Background(), "mysecret", "secret"); err != nil {
+	if err := client.DeleteKVSecret(context.Background(), "mysecret", "secret", nil); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }

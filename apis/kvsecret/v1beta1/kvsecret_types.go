@@ -34,6 +34,8 @@ type KVSecretParameters struct {
 	Path      string            `json:"path"`
 	Data      map[string]string `json:"data"`
 	MountPath string            `json:"mountPath"`
+	// Version of the KV engine. Set to 1 for KV v1, 2 for KV v2 (default).
+	Version *int `json:"version,omitempty"`
 }
 
 type KVSecretStatus struct {

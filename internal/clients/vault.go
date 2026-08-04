@@ -136,27 +136,38 @@ func (c *VaultClient) request(ctx context.Context, method, reqPath string, body 
 
 // KV v2
 
-func (c *VaultClient) writeKVSecret(ctx context.Context, path, mountPath string, data map[string]interface{}) error {
-	dataPath := fmt.Sprintf("/v1/%s/data/%s", mountPath, path)
+func kvDataPath(mountPath, path string, version *int) string {
+	if version != nil && *version == 1 {
+		return fmt.Sprintf("/v1/%s/%s", mountPath, path)
+	}
+	return fmt.Sprintf("/v1/%s/data/%s", mountPath, path)
+}
+
+func (c *VaultClient) writeKVSecret(ctx context.Context, path, mountPath string, data map[string]interface{}, version *int) error {
+	dataPath := kvDataPath(mountPath, path, version)
+	if version != nil && *version == 1 {
+		_, err := c.request(ctx, http.MethodPost, dataPath, data)
+		return err
+	}
 	_, err := c.request(ctx, http.MethodPost, dataPath, map[string]interface{}{
 		"data": data,
 	})
 	return err
 }
 
-func (c *VaultClient) CreateKVSecret(ctx context.Context, path, mountPath string, data map[string]string) error {
+func (c *VaultClient) CreateKVSecret(ctx context.Context, path, mountPath string, data map[string]string, version *int) error {
 	d := make(map[string]interface{}, len(data))
 	for k, v := range data {
 		d[k] = v
 	}
-	return c.writeKVSecret(ctx, path, mountPath, d)
+	return c.writeKVSecret(ctx, path, mountPath, d, version)
 }
 
 // UpdateKVSecret converges the Vault secret to the desired data set. Keys that
 // are present in Vault but absent from desired are deleted by writing null, as
 // per the KV v2 API.
-func (c *VaultClient) UpdateKVSecret(ctx context.Context, path, mountPath string, desired map[string]string) error {
-	existing, err := c.GetKVSecret(ctx, path, mountPath)
+func (c *VaultClient) UpdateKVSecret(ctx context.Context, path, mountPath string, desired map[string]string, version *int) error {
+	existing, err := c.GetKVSecret(ctx, path, mountPath, version)
 	if err != nil {
 		if !IsNotFound(err) {
 			return err
@@ -172,14 +183,23 @@ func (c *VaultClient) UpdateKVSecret(ctx context.Context, path, mountPath string
 			d[k] = nil
 		}
 	}
-	return c.writeKVSecret(ctx, path, mountPath, d)
+	return c.writeKVSecret(ctx, path, mountPath, d, version)
 }
 
-func (c *VaultClient) GetKVSecret(ctx context.Context, path, mountPath string) (map[string]string, error) {
-	dataPath := fmt.Sprintf("/v1/%s/data/%s", mountPath, path)
+func (c *VaultClient) GetKVSecret(ctx context.Context, path, mountPath string, version *int) (map[string]string, error) {
+	dataPath := kvDataPath(mountPath, path, version)
 	resp, err := c.request(ctx, http.MethodGet, dataPath, nil)
 	if err != nil {
 		return nil, err
+	}
+	if version != nil && *version == 1 {
+		var result struct {
+			Data map[string]string `json:"data"`
+		}
+		if err := json.Unmarshal(resp, &result); err != nil {
+			return nil, errors.Wrap(err, "failed to parse KV v1 secret response")
+		}
+		return result.Data, nil
 	}
 	var result struct {
 		Data struct {
@@ -187,13 +207,13 @@ func (c *VaultClient) GetKVSecret(ctx context.Context, path, mountPath string) (
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(resp, &result); err != nil {
-		return nil, errors.Wrap(err, "failed to parse KV secret response")
+		return nil, errors.Wrap(err, "failed to parse KV v2 secret response")
 	}
 	return result.Data.Data, nil
 }
 
-func (c *VaultClient) DeleteKVSecret(ctx context.Context, path, mountPath string) error {
-	dataPath := fmt.Sprintf("/v1/%s/data/%s", mountPath, path)
+func (c *VaultClient) DeleteKVSecret(ctx context.Context, path, mountPath string, version *int) error {
+	dataPath := kvDataPath(mountPath, path, version)
 	_, err := c.request(ctx, http.MethodDelete, dataPath, nil)
 	return err
 }
