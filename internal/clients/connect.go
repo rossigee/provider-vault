@@ -50,12 +50,12 @@ func TrackUsage(ctx context.Context, kube client.Client, mg resourceRef) error {
 		Name:       mg.GetName(),
 	})
 
-	return errors.Wrap(resource.NewAPIUpdatingApplicator(kube).Apply(ctx, pcu,
+	return errors.Wrap(resource.Ignore(resource.IsNotAllowed, resource.NewAPIUpdatingApplicator(kube).Apply(ctx, pcu,
 		resource.MustBeControllableBy(mg.GetUID()),
 		resource.AllowUpdateIf(func(current, _ runtime.Object) bool {
 			return current.(*vaultv1beta1.ProviderConfigUsage).GetProviderConfigReference() != pcu.GetProviderConfigReference()
 		}),
-	), "cannot apply ProviderConfigUsage")
+	)), "cannot apply ProviderConfigUsage")
 }
 
 // Connect builds a Vault client from the ProviderConfig referenced by the
