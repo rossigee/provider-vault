@@ -222,3 +222,122 @@ func TestUpdate_NoCRLCallWithoutCRLFields(t *testing.T) {
 		t.Errorf("expected 0 Vault calls, got %d", callCount)
 	}
 }
+
+func urlsConfigBody() string {
+	return `{"data":{"issuing_certificates":["https://vault.example/v1/pki/ca"],"crl_distribution_points":["https://vault.example/v1/pki/crl"],"ocsp_servers":[]}}`
+}
+
+func TestObserve_URLsUpToDate(t *testing.T) {
+	e, srv, cr := newTestPKIConfig(t, func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/ca/pem"):
+			_, _ = fmt.Fprint(w, "-----BEGIN CERTIFICATE-----test-----END CERTIFICATE-----")
+		case strings.HasSuffix(r.URL.Path, "/config/urls"):
+			_, _ = fmt.Fprint(w, urlsConfigBody())
+		default:
+			t.Errorf("unexpected path = %s", r.URL.Path)
+		}
+	})
+	defer srv.Close()
+
+	p := &cr.Spec.ForProvider
+	p.IssuingCertificates = []string{"https://vault.example/v1/pki/ca"}
+	p.CrlDistributionPoints = []string{"https://vault.example/v1/pki/crl"}
+
+	obs, err := e.Observe(context.Background(), cr)
+	if err != nil {
+		t.Fatalf("Observe: %v", err)
+	}
+	if !obs.ResourceUpToDate {
+		t.Error("expected ResourceUpToDate=true when URL config matches")
+	}
+}
+
+func TestObserve_URLsDrift(t *testing.T) {
+	e, srv, cr := newTestPKIConfig(t, func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case strings.HasSuffix(r.URL.Path, "/ca/pem"):
+			_, _ = fmt.Fprint(w, "-----BEGIN CERTIFICATE-----test-----END CERTIFICATE-----")
+		case strings.HasSuffix(r.URL.Path, "/config/urls"):
+			_, _ = fmt.Fprint(w, urlsConfigBody())
+		default:
+			t.Errorf("unexpected path = %s", r.URL.Path)
+		}
+	})
+	defer srv.Close()
+
+	p := &cr.Spec.ForProvider
+	p.IssuingCertificates = []string{"https://vault.example/v1/pki/other-ca"}
+
+	obs, err := e.Observe(context.Background(), cr)
+	if err != nil {
+		t.Fatalf("Observe: %v", err)
+	}
+	if obs.ResourceUpToDate {
+		t.Error("expected ResourceUpToDate=false when URL config drifts")
+	}
+}
+
+func TestUpdate_ConfiguresURLs(t *testing.T) {
+	callCount := 0
+	e, srv, cr := newTestPKIConfig(t, func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		if r.URL.Path != "/v1/pki/config/urls" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		_, _ = fmt.Fprint(w, `{"data":{}}`)
+	})
+	defer srv.Close()
+
+	p := &cr.Spec.ForProvider
+	p.IssuingCertificates = []string{"https://vault.example/v1/pki/ca"}
+	p.CrlDistributionPoints = []string{"https://vault.example/v1/pki/crl"}
+
+	_, err := e.Update(context.Background(), cr)
+	if err != nil {
+		t.Fatalf("Update: %v", err)
+	}
+	if callCount != 1 {
+		t.Errorf("expected 1 Vault call, got %d", callCount)
+	}
+}
+
+func TestCreate_GeneratesRootAndConfigures(t *testing.T) {
+	paths := []string{}
+	e, srv, cr := newTestPKIConfig(t, func(w http.ResponseWriter, r *http.Request) {
+		paths = append(paths, r.URL.Path)
+		switch r.URL.Path {
+		case "/v1/pki/root/generate/internal":
+			_, _ = fmt.Fprint(w, `{"data":{"certificate":"-----BEGIN CERTIFICATE-----root-----END CERTIFICATE-----","serial_number":"00:11:22"}}`)
+		case "/v1/pki/config/urls":
+			_, _ = fmt.Fprint(w, `{"data":{}}`)
+		case "/v1/pki/config/crl":
+			_, _ = fmt.Fprint(w, `{"data":{}}`)
+		default:
+			t.Errorf("unexpected path = %s", r.URL.Path)
+		}
+	})
+	defer srv.Close()
+
+	p := &cr.Spec.ForProvider
+	p.IssuingCertificates = []string{"https://vault.example/v1/pki/ca"}
+	p.CrlDistributionPoints = []string{"https://vault.example/v1/pki/crl"}
+	p.CrlExpiry = "72h"
+	p.CrlAutoRebuild = ptr(true)
+
+	_, err := e.Create(context.Background(), cr)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+	if len(paths) != 3 {
+		t.Errorf("expected 3 Vault calls, got %d: %v", len(paths), paths)
+	}
+	if cr.Status.AtProvider.Serial != "00:11:22" {
+		t.Errorf("expected serial recorded, got %q", cr.Status.AtProvider.Serial)
+	}
+	if cr.Status.AtProvider.Certificate != "-----BEGIN CERTIFICATE-----root-----END CERTIFICATE-----" {
+		t.Errorf("expected certificate recorded, got %q", cr.Status.AtProvider.Certificate)
+	}
+}
+
+func ptr(b bool) *bool { return &b }
