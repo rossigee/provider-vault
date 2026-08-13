@@ -30,11 +30,11 @@ func newTestIdentityGroup(t *testing.T, handler http.HandlerFunc) (*external, *h
 		},
 		Spec: v1beta1.IdentityGroupSpec{
 			ForProvider: v1beta1.IdentityGroupParameters{
-				Name:           "my-group",
-				Type:           "internal",
-				Policies:       []string{"default"},
+				Name:            "my-group",
+				Type:            "internal",
+				Policies:        []string{"default"},
 				MemberEntityIDs: []string{"entity-id-1"},
-				Metadata:       map[string]string{"env": "test"},
+				Metadata:        map[string]string{"env": "test"},
 			},
 		},
 	}

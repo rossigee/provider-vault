@@ -10,6 +10,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
@@ -19,13 +20,13 @@ import (
 )
 
 const (
-	errNotLeaseRenewal  = "managed resource is not a LeaseRenewal custom resource"
-	errTrackPCUsage     = "cannot track ProviderConfig usage"
-	errGetPC            = "cannot get ProviderConfig"
-	errGetCreds         = "cannot get credentials"
-	errLookupLease      = "cannot lookup Vault lease"
-	errRenewLease       = "cannot renew Vault lease"
-	errRevokeLease      = "cannot revoke Vault lease"
+	errNotLeaseRenewal = "managed resource is not a LeaseRenewal custom resource"
+	errTrackPCUsage    = "cannot track ProviderConfig usage"
+	errGetPC           = "cannot get ProviderConfig"
+	errGetCreds        = "cannot get credentials"
+	errLookupLease     = "cannot lookup Vault lease"
+	errRenewLease      = "cannot renew Vault lease"
+	errRevokeLease     = "cannot revoke Vault lease"
 )
 
 func Setup(mgr ctrl.Manager, o controller.Options) error {
@@ -97,6 +98,8 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	cr.Status.AtProvider.LeaseID = info.LeaseID
 	cr.Status.AtProvider.Renewable = info.Renewable
 	cr.Status.AtProvider.TTL = info.LeaseDuration
+
+	cr.Status.SetConditions(xpv1.Available())
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,

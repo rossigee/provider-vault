@@ -53,6 +53,14 @@ spec:
                     items:
                       type: string
                     type: array
+                  boundServiceAccountNames:
+                    items:
+                      type: string
+                    type: array
+                  boundServiceAccountNamespaces:
+                    items:
+                      type: string
+                    type: array
                   boundSubject:
                     type: string
                   clockSkewLeeway:

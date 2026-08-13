@@ -30,8 +30,8 @@ func newTestAuthBackendRole(t *testing.T, handler http.HandlerFunc) (*external, 
 		},
 		Spec: v1beta1.AuthBackendRoleSpec{
 			ForProvider: v1beta1.AuthBackendRoleParameters{
-				Backend:      "jwt",
-				RoleName:     "my-role",
+				Backend:       "jwt",
+				RoleName:      "my-role",
 				TokenPolicies: []string{"default"},
 			},
 		},

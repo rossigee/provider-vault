@@ -10,6 +10,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/awsauthconfig/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
@@ -103,6 +104,8 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 			upToDate = false
 		}
 	}
+
+	cr.Status.SetConditions(xpv1.Available())
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,

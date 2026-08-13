@@ -30,10 +30,10 @@ func newTestDatabaseRole(t *testing.T, handler http.HandlerFunc) (*external, *ht
 		},
 		Spec: v1beta1.DatabaseRoleSpec{
 			ForProvider: v1beta1.DatabaseRoleParameters{
-				Backend:            "database",
-				Name:               "my-role",
-				DBName:             "mydb",
-				CreationStatements: []string{"CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'"},
+				Backend:              "database",
+				Name:                 "my-role",
+				DBName:               "mydb",
+				CreationStatements:   []string{"CREATE ROLE \"{{name}}\" WITH LOGIN PASSWORD '{{password}}' VALID UNTIL '{{expiration}}'"},
 				RevocationStatements: []string{"REVOKE OWNERSHIP ON ALL TABLES IN SCHEMA public TO \"{{name}}\""},
 				RollbackStatements:   []string{"DROP ROLE IF EXISTS \"{{name}}\""},
 				RenewStatements:      []string{"ALTER ROLE \"{{name}}\" VALID UNTIL '{{expiration}}'"},

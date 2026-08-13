@@ -10,6 +10,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/authbackendrole/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
@@ -31,7 +32,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1beta1.AuthBackendRoleGroupVersionKind),
 		managed.WithExternalConnector(&connector{
-			kube:  mgr.GetClient(),
+			kube: mgr.GetClient(),
 		}),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithPollInterval(o.PollInterval),
@@ -100,6 +101,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if clients.DriftedString(data, "bound_subject", p.BoundSubject) {
 		upToDate = false
 	}
+	if clients.DriftedStringSlice(data, "bound_service_account_names", p.BoundServiceAccountNames) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "bound_service_account_namespaces", p.BoundServiceAccountNamespaces) {
+		upToDate = false
+	}
 	if clients.DriftedString(data, "user_claim", p.UserClaim) {
 		upToDate = false
 	}
@@ -142,6 +149,8 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if clients.DriftedInt(data, "clock_skew_leeway", p.ClockSkewLeeway) {
 		upToDate = false
 	}
+
+	cr.Status.SetConditions(xpv1.Available())
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,
@@ -203,6 +212,12 @@ func buildAuthBackendRoleParams(p v1beta1.AuthBackendRoleParameters) map[string]
 	}
 	if p.BoundSubject != "" {
 		params["bound_subject"] = p.BoundSubject
+	}
+	if len(p.BoundServiceAccountNames) > 0 {
+		params["bound_service_account_names"] = p.BoundServiceAccountNames
+	}
+	if len(p.BoundServiceAccountNamespaces) > 0 {
+		params["bound_service_account_namespaces"] = p.BoundServiceAccountNamespaces
 	}
 	if p.UserClaim != "" {
 		params["user_claim"] = p.UserClaim

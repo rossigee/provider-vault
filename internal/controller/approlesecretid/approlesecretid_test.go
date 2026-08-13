@@ -113,7 +113,7 @@ func TestObserve_WithAccessor(t *testing.T) {
 func TestObserve_AccessorNotFound(t *testing.T) {
 	e, srv, cr := newTestHarness(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
-_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
 	})
 	defer srv.Close()
 
@@ -313,7 +313,7 @@ func TestDelete_NoIdentifier(t *testing.T) {
 
 func TestGetSecretID_FromExternalName(t *testing.T) {
 	e, srv, cr := newTestHarness(t, func(w http.ResponseWriter, r *http.Request) {
-_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid-vault","secret_id_accessor":"acc-vault"}}`)
+		_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid-vault","secret_id_accessor":"acc-vault"}}`)
 	})
 	defer srv.Close()
 
@@ -330,7 +330,7 @@ _, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid-vault","secret_id_accessor":"acc
 func TestGetSecretID_FromConnectionSecret(t *testing.T) {
 	e, srv, cr := newTestHarness(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
-_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
+		_, _ = fmt.Fprint(w, `{"errors":["not found"]}`)
 	})
 	defer srv.Close()
 

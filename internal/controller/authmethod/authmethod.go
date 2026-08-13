@@ -10,6 +10,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/authmethod/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
@@ -31,7 +32,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 	r := managed.NewReconciler(mgr,
 		resource.ManagedKind(v1beta1.AuthMethodGroupVersionKind),
 		managed.WithExternalConnector(&connector{
-			kube:  mgr.GetClient(),
+			kube: mgr.GetClient(),
 		}),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithPollInterval(o.PollInterval),
@@ -92,6 +93,8 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	cr.Status.AtProvider.MountPath = cr.Spec.ForProvider.MountPath
 
 	upToDate := !clients.DriftedString(data, "type", cr.Spec.ForProvider.Type)
+
+	cr.Status.SetConditions(xpv1.Available())
 
 	return managed.ExternalObservation{
 		ResourceExists:   true,

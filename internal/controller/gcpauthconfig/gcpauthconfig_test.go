@@ -30,9 +30,9 @@ func newTestGCPAuthConfig(t *testing.T, handler http.HandlerFunc) (*external, *h
 		},
 		Spec: v1beta1.GCPAuthConfigSpec{
 			ForProvider: v1beta1.GCPAuthConfigParameters{
-				Backend:              "gcp-auth",
+				Backend:             "gcp-auth",
 				ServiceAccountEmail: "vault@example.iam.gserviceaccount.com",
-				ProjectID:            "my-project",
+				ProjectID:           "my-project",
 			},
 		},
 	}

@@ -36,7 +36,7 @@ func newTestDatabaseBackend(t *testing.T, handler http.HandlerFunc) (*external, 
 				ConnectionURL: "postgresql://{{username}}:{{password}}@localhost:5432/mydb",
 				Username:      "vault",
 				Password:      "vaultpass",
-				AllowedRoles: []string{"readonly"},
+				AllowedRoles:  []string{"readonly"},
 			},
 		},
 	}
