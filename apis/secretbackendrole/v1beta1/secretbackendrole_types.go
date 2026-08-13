@@ -59,6 +59,8 @@ type SecretBackendRoleParameters struct {
 	RequireCN                  *bool    `json:"requireCn,omitempty"`
 	AllowedOtherSans           []string `json:"allowedOtherSans,omitempty"`
 	AllowedSerialNumbers       []string `json:"allowedSerialNumbers,omitempty"`
+	KeyUsage                   []string `json:"keyUsage,omitempty"`
+	ExtKeyUsage                []string `json:"extKeyUsage,omitempty"`
 }
 
 type SecretBackendRoleStatus struct {

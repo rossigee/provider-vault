@@ -176,6 +176,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if clients.DriftedStringSlice(data, "allowed_serial_numbers", p.AllowedSerialNumbers) {
 		upToDate = false
 	}
+	if clients.DriftedStringSlice(data, "key_usage", p.KeyUsage) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "ext_key_usage", p.ExtKeyUsage) {
+		upToDate = false
+	}
 
 	cr.Status.SetConditions(xpv1.Available())
 
@@ -314,6 +320,12 @@ func buildSecretBackendRoleParams(p v1beta1.SecretBackendRoleParameters) map[str
 	}
 	if len(p.AllowedSerialNumbers) > 0 {
 		params["allowed_serial_numbers"] = p.AllowedSerialNumbers
+	}
+	if len(p.KeyUsage) > 0 {
+		params["key_usage"] = p.KeyUsage
+	}
+	if len(p.ExtKeyUsage) > 0 {
+		params["ext_key_usage"] = p.ExtKeyUsage
 	}
 
 	return params
