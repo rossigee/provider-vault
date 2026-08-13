@@ -81,6 +81,21 @@ func TestObserve_NotFound(t *testing.T) {
 	}
 }
 
+func TestObserve_NoIssuerReturnsNotFound(t *testing.T) {
+	e, srv, cr := newTestPKIConfig(t, func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	obs, err := e.Observe(context.Background(), cr)
+	if err != nil {
+		t.Fatalf("Observe: %v", err)
+	}
+	if obs.ResourceExists {
+		t.Error("expected ResourceExists=false when Vault returns 204 (no issuer)")
+	}
+}
+
 func TestObserve_CRLUpToDate(t *testing.T) {
 	autoRebuild := true
 	enableDelta := true

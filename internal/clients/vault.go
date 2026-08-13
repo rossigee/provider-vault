@@ -572,6 +572,12 @@ func (c *VaultClient) GetPKICA(ctx context.Context, backend string) (string, err
 	if err != nil {
 		return "", err
 	}
+	// Vault returns HTTP 204 No Content (empty body) when the PKI mount has no
+	// default issuer configured. Treat that as NotFound so the reconciler
+	// generates a root CA rather than adopting an empty certificate.
+	if len(resp) == 0 {
+		return "", &errNotFound{fmt.Errorf("no issuer configured for PKI backend %s", backend)}
+	}
 	return string(resp), nil
 }
 
