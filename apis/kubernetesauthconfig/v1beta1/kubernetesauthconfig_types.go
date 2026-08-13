@@ -37,6 +37,10 @@ type KubernetesAuthConfigParameters struct {
 	KubernetesCACert string `json:"kubernetesCaCert,omitempty"`
 	// TokenReviewerJWT is a JWT token for the token reviewer service account.
 	TokenReviewerJWT string `json:"tokenReviewerJwt,omitempty"`
+	// TokenReviewerJWTSecretRef references a Kubernetes secret containing the
+	// JWT token for the token reviewer service account. Takes precedence over
+	// TokenReviewerJWT when both are set.
+	TokenReviewerJWTSecretRef *xpv1.SecretKeySelector `json:"tokenReviewerJwtSecretRef,omitempty"`
 	// Issuer is the Kubernetes token issuer (defaults to kubernetes/serviceaccount).
 	Issuer string `json:"issuer,omitempty"`
 	// DisableISSValidation disables issuer validation.

@@ -68,6 +68,26 @@ spec:
                     description: TokenReviewerJWT is a JWT token for the token reviewer
                       service account.
                     type: string
+                  tokenReviewerJwtSecretRef:
+                    description: |-
+                      TokenReviewerJWTSecretRef references a Kubernetes secret containing the
+                      JWT token for the token reviewer service account. Takes precedence over
+                      TokenReviewerJWT when both are set.
+                    properties:
+                      key:
+                        description: The key to select.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: Namespace of the secret.
+                        type: string
+                    required:
+                    - key
+                    - name
+                    - namespace
+                    type: object
                 required:
                 - backend
                 - kubernetesHost

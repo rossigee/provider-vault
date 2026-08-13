@@ -8,8 +8,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	v1beta1 "github.com/rossigee/provider-vault/apis/kubernetesauthconfig/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
 )
@@ -22,6 +25,18 @@ func newTestKubernetesAuthConfig(t *testing.T, handler http.HandlerFunc) (*exter
 	if err != nil {
 		t.Fatalf("NewVaultClientFromConfig: %v", err)
 	}
+
+	kube := fake.NewClientBuilder().WithObjects(
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "test-jwt",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{
+				"token": []byte("jwt-from-secret"),
+			},
+		},
+	).Build()
 
 	cr := &v1beta1.KubernetesAuthConfig{
 		ObjectMeta: metav1.ObjectMeta{
@@ -36,7 +51,7 @@ func newTestKubernetesAuthConfig(t *testing.T, handler http.HandlerFunc) (*exter
 		},
 	}
 
-	return &external{service: vc}, srv, cr
+	return &external{service: vc, kube: kube}, srv, cr
 }
 
 func TestObserve_Exists(t *testing.T) {
@@ -93,6 +108,9 @@ func TestCreate(t *testing.T) {
 		if body["kubernetes_host"] != "https://kubernetes.default.svc" {
 			t.Errorf("kubernetes_host = %v", body["kubernetes_host"])
 		}
+		if _, hasToken := body["token_reviewer_jwt"]; hasToken {
+			t.Errorf("token_reviewer_jwt should not be set without a source")
+		}
 		w.WriteHeader(204)
 	})
 	defer srv.Close()
@@ -100,6 +118,80 @@ func TestCreate(t *testing.T) {
 	_, err := e.Create(context.Background(), cr)
 	if err != nil {
 		t.Fatalf("Create: %v", err)
+	}
+}
+
+func TestCreate_TokenReviewerJWTSecretRef(t *testing.T) {
+	e, srv, cr := newTestKubernetesAuthConfig(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v1/auth/k8s/config" {
+			t.Errorf("path = %s", r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["token_reviewer_jwt"] != "jwt-from-secret" {
+			t.Errorf("token_reviewer_jwt = %v, want jwt-from-secret", body["token_reviewer_jwt"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	cr.Spec.ForProvider.TokenReviewerJWTSecretRef = &xpv1.SecretKeySelector{
+		SecretReference: xpv1.SecretReference{
+			Name:      "test-jwt",
+			Namespace: "default",
+		},
+		Key: "token",
+	}
+
+	_, err := e.Create(context.Background(), cr)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+}
+
+func TestCreate_SecretRefPrecedesInline(t *testing.T) {
+	e, srv, cr := newTestKubernetesAuthConfig(t, func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["token_reviewer_jwt"] != "jwt-from-secret" {
+			t.Errorf("token_reviewer_jwt = %v, want jwt-from-secret (secretRef must take precedence)", body["token_reviewer_jwt"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	cr.Spec.ForProvider.TokenReviewerJWT = "inline-jwt"
+	cr.Spec.ForProvider.TokenReviewerJWTSecretRef = &xpv1.SecretKeySelector{
+		SecretReference: xpv1.SecretReference{
+			Name:      "test-jwt",
+			Namespace: "default",
+		},
+		Key: "token",
+	}
+
+	_, err := e.Create(context.Background(), cr)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+}
+
+func TestCreate_SecretRefMissing(t *testing.T) {
+	e, srv, cr := newTestKubernetesAuthConfig(t, func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("unexpected Vault call: %s %s", r.Method, r.URL.Path)
+	})
+	defer srv.Close()
+
+	cr.Spec.ForProvider.TokenReviewerJWTSecretRef = &xpv1.SecretKeySelector{
+		SecretReference: xpv1.SecretReference{
+			Name:      "does-not-exist",
+			Namespace: "default",
+		},
+		Key: "token",
+	}
+
+	_, err := e.Create(context.Background(), cr)
+	if err == nil {
+		t.Fatal("expected error for missing secret, got nil")
 	}
 }
 
