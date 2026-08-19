@@ -1,8 +1,8 @@
 package v1beta1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const CertificateKind = "Certificate"
@@ -59,12 +59,12 @@ type CertificateStatus struct {
 }
 
 type CertificateObservation struct {
-	Serial       string `json:"serial,omitempty"`
-	Expiration   int64  `json:"expiration,omitempty"`
-	Certificate  string `json:"certificate,omitempty"`
-	IssuingCa    string `json:"issuingCa,omitempty"`
-	CaChain      string `json:"caChain,omitempty"`
-	PrivateKey   string `json:"privateKey,omitempty"`
+	Serial         string `json:"serial,omitempty"`
+	Expiration     int64  `json:"expiration,omitempty"`
+	Certificate    string `json:"certificate,omitempty"`
+	IssuingCa      string `json:"issuingCa,omitempty"`
+	CaChain        string `json:"caChain,omitempty"`
+	PrivateKey     string `json:"privateKey,omitempty"`
 	PrivateKeyType string `json:"privateKeyType,omitempty"`
 }
 

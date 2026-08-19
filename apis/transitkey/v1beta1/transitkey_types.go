@@ -1,8 +1,8 @@
 package v1beta1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const TransitKeyKind = "TransitKey"
@@ -54,11 +54,11 @@ type TransitKeyStatus struct {
 }
 
 type TransitKeyObservation struct {
-	Name              string `json:"name,omitempty"`
-	Type              string `json:"type,omitempty"`
-	DeletionAllowed   bool   `json:"deletionAllowed,omitempty"`
-	MinDecryptionVersion int `json:"minDecryptionVersion,omitempty"`
-	LatestVersion     int    `json:"latestVersion,omitempty"`
+	Name                 string `json:"name,omitempty"`
+	Type                 string `json:"type,omitempty"`
+	DeletionAllowed      bool   `json:"deletionAllowed,omitempty"`
+	MinDecryptionVersion int    `json:"minDecryptionVersion,omitempty"`
+	LatestVersion        int    `json:"latestVersion,omitempty"`
 }
 
 // +kubebuilder:object:root=true

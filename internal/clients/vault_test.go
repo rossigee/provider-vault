@@ -170,7 +170,6 @@ func TestGenerateAppRoleSecretID(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid123","secret_id_accessor":"acc456"}}`)
 
-
 	})
 	defer srv.Close()
 
@@ -195,7 +194,7 @@ func TestGenerateAppRoleSecretID_WithMetadata(t *testing.T) {
 		if body["metadata"] != `{"env":"test"}` {
 			t.Errorf("metadata = %v", body["metadata"])
 		}
-_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"acc"}}`)
+		_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"acc"}}`)
 	})
 	defer srv.Close()
 
@@ -213,11 +212,11 @@ func TestLookupAppRoleSecretID(t *testing.T) {
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		var body map[string]string
-	_ = json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		if body["secret_id_accessor"] != "test-accessor" {
 			t.Errorf("accessor = %s", body["secret_id_accessor"])
 		}
-_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"test-accessor"}}`)
+		_, _ = fmt.Fprint(w, `{"data":{"secret_id":"sid","secret_id_accessor":"test-accessor"}}`)
 	})
 	defer srv.Close()
 
@@ -236,7 +235,7 @@ func TestDestroyAppRoleSecretID(t *testing.T) {
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		var body map[string]string
-	_ = json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		if body["secret_id"] != "sid123" {
 			t.Errorf("secret_id = %s", body["secret_id"])
 		}
@@ -255,7 +254,7 @@ func TestDestroyAppRoleSecretIDByAccessor(t *testing.T) {
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		var body map[string]string
-	_ = json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		if body["secret_id_accessor"] != "acc456" {
 			t.Errorf("accessor = %s", body["secret_id_accessor"])
 		}
@@ -656,7 +655,7 @@ func TestCreatePolicy(t *testing.T) {
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		var body map[string]string
-	_ = json.NewDecoder(r.Body).Decode(&body)
+		_ = json.NewDecoder(r.Body).Decode(&body)
 		if body["policy"] != `path "secret/*" { capabilities = ["read"] }` {
 			t.Errorf("policy = %s", body["policy"])
 		}
@@ -678,7 +677,7 @@ func TestGetPolicy(t *testing.T) {
 		if r.URL.Path != "/v1/sys/policies/acl/mypolicy" {
 			t.Errorf("path = %s", r.URL.Path)
 		}
-_, _ = fmt.Fprint(w, `{"data":{"name":"mypolicy","policy":"read"}}`)
+		_, _ = fmt.Fprint(w, `{"data":{"name":"mypolicy","policy":"read"}}`)
 	})
 	defer srv.Close()
 
@@ -694,7 +693,7 @@ _, _ = fmt.Fprint(w, `{"data":{"name":"mypolicy","policy":"read"}}`)
 func TestGetPolicy_Missing(t *testing.T) {
 	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
-_, _ = fmt.Fprint(w, `{"errors":["no policy found"]}`)
+		_, _ = fmt.Fprint(w, `{"errors":["no policy found"]}`)
 	})
 	defer srv.Close()
 
@@ -723,7 +722,7 @@ func TestDeletePolicy(t *testing.T) {
 func TestRequest_VaultAPIError(t *testing.T) {
 	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(500)
-_, _ = fmt.Fprint(w, `{"errors":["internal error"]}`)
+		_, _ = fmt.Fprint(w, `{"errors":["internal error"]}`)
 	})
 	defer srv.Close()
 
@@ -736,7 +735,7 @@ _, _ = fmt.Fprint(w, `{"errors":["internal error"]}`)
 func TestRequest_NonJSONError(t *testing.T) {
 	client, srv := newTestVaultClient(t, func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(503)
-_, _ = fmt.Fprint(w, `Service Unavailable`)
+		_, _ = fmt.Fprint(w, `Service Unavailable`)
 	})
 	defer srv.Close()
 
@@ -764,7 +763,7 @@ func TestVaultNamespaceHeader(t *testing.T) {
 		if r.Header.Get("X-Vault-Namespace") != "admin" {
 			t.Errorf("X-Vault-Namespace = %q, want 'admin'", r.Header.Get("X-Vault-Namespace"))
 		}
-_, _ = fmt.Fprint(w, `{}`)
+		_, _ = fmt.Fprint(w, `{}`)
 	})
 	defer srv.Close()
 	client.vaultNamespace = "admin"
@@ -780,7 +779,7 @@ func TestVaultNamespaceHeader_Empty(t *testing.T) {
 		if v := r.Header.Get("X-Vault-Namespace"); v != "" {
 			t.Errorf("X-Vault-Namespace = %q, want empty", v)
 		}
-_, _ = fmt.Fprint(w, `{}`)
+		_, _ = fmt.Fprint(w, `{}`)
 	})
 	defer srv.Close()
 
@@ -797,7 +796,7 @@ func TestUserAgentHeader(t *testing.T) {
 		if r.Header.Get("User-Agent") != "provider-vault/"+version.Version {
 			t.Errorf("User-Agent = %q", r.Header.Get("User-Agent"))
 		}
-_, _ = fmt.Fprint(w, `{}`)
+		_, _ = fmt.Fprint(w, `{}`)
 	})
 	defer srv.Close()
 
@@ -814,7 +813,7 @@ func TestRequest_URLConstruction(t *testing.T) {
 		if r.URL.Path != "/v1/kv/data/mysecret" {
 			t.Errorf("path = %s", r.URL.Path)
 		}
-_, _ = fmt.Fprint(w, `{}`)
+		_, _ = fmt.Fprint(w, `{}`)
 	})
 	defer srv.Close()
 
@@ -932,7 +931,7 @@ func TestGetConfig_VaultNamespace(t *testing.T) {
 	ns := "admin"
 	pc := &vaultv1beta1.ProviderConfig{
 		Spec: vaultv1beta1.ProviderConfigSpec{
-			Address: "https://vault.example.com",
+			Address:        "https://vault.example.com",
 			VaultNamespace: &ns,
 			Credentials: vaultv1beta1.ProviderCredentials{
 				Source: "Secret",
@@ -1163,8 +1162,8 @@ func TestConfigurePKICRL(t *testing.T) {
 	defer srv.Close()
 
 	err := client.ConfigurePKICRL(context.Background(), "pki", map[string]interface{}{
-		"expiry":        "72h",
-		"auto_rebuild":  true,
+		"expiry":       "72h",
+		"auto_rebuild": true,
 	})
 	if err != nil {
 		t.Fatalf("ConfigurePKICRL: %v", err)

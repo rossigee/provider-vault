@@ -289,8 +289,8 @@ func (c *VaultClient) DisableAuthMethod(ctx context.Context, mountPath string) e
 
 func (c *VaultClient) CreateRateQuota(ctx context.Context, name, path string, rate string, interval string, blocked []string) error {
 	body := map[string]interface{}{
-		"rate":      rate,
-		"interval":  interval,
+		"rate":     rate,
+		"interval": interval,
 	}
 	if path != "" {
 		body["path"] = path
@@ -375,9 +375,9 @@ func (c *VaultClient) DeleteNamespace(ctx context.Context, name string) error {
 // Lease
 
 type LeaseInfo struct {
-	LeaseID    string `json:"lease_id"`
-	Renewable  bool   `json:"renewable"`
-	LeaseDuration int `json:"lease_duration"`
+	LeaseID       string `json:"lease_id"`
+	Renewable     bool   `json:"renewable"`
+	LeaseDuration int    `json:"lease_duration"`
 }
 
 func (c *VaultClient) RenewLease(ctx context.Context, leaseID string, increment *int) (*LeaseInfo, error) {
@@ -392,9 +392,9 @@ func (c *VaultClient) RenewLease(ctx context.Context, leaseID string, increment 
 		return nil, err
 	}
 	var result struct {
-		LeaseID      string `json:"lease_id"`
-		Renewable    bool   `json:"renewable"`
-		LeaseDuration int  `json:"lease_duration"`
+		LeaseID       string `json:"lease_id"`
+		Renewable     bool   `json:"renewable"`
+		LeaseDuration int    `json:"lease_duration"`
 	}
 	if err := json.Unmarshal(resp, &result); err != nil {
 		return nil, errors.Wrap(err, "failed to parse lease renewal response")
@@ -424,9 +424,9 @@ func (c *VaultClient) LookupLease(ctx context.Context, leaseID string) (*LeaseIn
 	}
 	var result struct {
 		Data struct {
-			LeaseID      string `json:"lease_id"`
-			Renewable    bool   `json:"renewable"`
-			LeaseDuration int  `json:"lease_duration"`
+			LeaseID       string `json:"lease_id"`
+			Renewable     bool   `json:"renewable"`
+			LeaseDuration int    `json:"lease_duration"`
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(resp, &result); err != nil {
@@ -1161,12 +1161,12 @@ func (c *VaultClient) ReadAppRoleRoleID(ctx context.Context, backend, roleName s
 // Helper to read token from k8s secret and create client from ProviderConfig
 
 type Config struct {
-	Address       string
-	Token         string
-	Insecure      bool
-	CACertPEM     []byte
-	ClientCertPEM []byte
-	ClientKeyPEM  []byte
+	Address        string
+	Token          string
+	Insecure       bool
+	CACertPEM      []byte
+	ClientCertPEM  []byte
+	ClientKeyPEM   []byte
 	VaultNamespace string
 }
 

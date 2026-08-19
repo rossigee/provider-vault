@@ -1,8 +1,8 @@
 package v1beta1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const DatabaseRoleKind = "DatabaseRole"
@@ -29,15 +29,15 @@ type DatabaseRoleSpec struct {
 }
 
 type DatabaseRoleParameters struct {
-	Backend          string   `json:"backend"`
-	Name             string   `json:"name"`
-	DBName           string   `json:"dbName"`
-	CreationStatements []string `json:"creationStatements,omitempty"`
+	Backend              string   `json:"backend"`
+	Name                 string   `json:"name"`
+	DBName               string   `json:"dbName"`
+	CreationStatements   []string `json:"creationStatements,omitempty"`
 	RevocationStatements []string `json:"revocationStatements,omitempty"`
-	RollbackStatements  []string `json:"rollbackStatements,omitempty"`
-	RenewStatements     []string `json:"renewStatements,omitempty"`
-	DefaultTTL         string   `json:"defaultTtl,omitempty"`
-	MaxTTL             string   `json:"maxTtl,omitempty"`
+	RollbackStatements   []string `json:"rollbackStatements,omitempty"`
+	RenewStatements      []string `json:"renewStatements,omitempty"`
+	DefaultTTL           string   `json:"defaultTtl,omitempty"`
+	MaxTTL               string   `json:"maxTtl,omitempty"`
 }
 
 type DatabaseRoleStatus struct {

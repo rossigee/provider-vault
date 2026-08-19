@@ -17,17 +17,17 @@ import (
 	"github.com/rossigee/provider-vault/internal/controller/authmethod"
 	"github.com/rossigee/provider-vault/internal/controller/awsauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/azureauthconfig"
-	"github.com/rossigee/provider-vault/internal/controller/gcpauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/certificate"
 	"github.com/rossigee/provider-vault/internal/controller/databasebackend"
 	"github.com/rossigee/provider-vault/internal/controller/databaserole"
+	"github.com/rossigee/provider-vault/internal/controller/gcpauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/identityentity"
 	"github.com/rossigee/provider-vault/internal/controller/identitygroup"
-	"github.com/rossigee/provider-vault/internal/controller/kubernetesauthconfig"
-	"github.com/rossigee/provider-vault/internal/controller/leaserenewal"
 	"github.com/rossigee/provider-vault/internal/controller/jwtauthconfig"
+	"github.com/rossigee/provider-vault/internal/controller/kubernetesauthconfig"
 	"github.com/rossigee/provider-vault/internal/controller/kvsecret"
 	"github.com/rossigee/provider-vault/internal/controller/ldapauthconfig"
+	"github.com/rossigee/provider-vault/internal/controller/leaserenewal"
 	"github.com/rossigee/provider-vault/internal/controller/mount"
 	"github.com/rossigee/provider-vault/internal/controller/namespaces"
 	"github.com/rossigee/provider-vault/internal/controller/pkiconfig"
@@ -116,7 +116,7 @@ func setupRBAC(c client.Client, l logging.Logger) error {
 
 	system := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "crossplane:provider:provider-vault:system",
+			Name:   "crossplane:provider:provider-vault:system",
 			Labels: map[string]string{"rbac.crossplane.io/system": "provider-vault"},
 		},
 		Rules: rules,
@@ -130,8 +130,8 @@ func setupRBAC(c client.Client, l logging.Logger) error {
 
 	binding := &rbacv1.ClusterRoleBinding{
 		ObjectMeta: metav1.ObjectMeta{Name: "crossplane:provider:provider-vault:system"},
-		RoleRef: rbacv1.RoleRef{APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole", Name: "crossplane:provider:provider-vault:system"},
-		Subjects: []rbacv1.Subject{{Kind: "ServiceAccount", Name: "provider-vault", Namespace: "crossplane-system"}},
+		RoleRef:    rbacv1.RoleRef{APIGroup: "rbac.authorization.k8s.io", Kind: "ClusterRole", Name: "crossplane:provider:provider-vault:system"},
+		Subjects:   []rbacv1.Subject{{Kind: "ServiceAccount", Name: "provider-vault", Namespace: "crossplane-system"}},
 	}
 	if err := c.Create(ctx, binding); err != nil && !errors.IsAlreadyExists(err) {
 		return err
@@ -157,7 +157,7 @@ func setupRBAC(c client.Client, l logging.Logger) error {
 
 	view := &rbacv1.ClusterRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: "crossplane:provider:provider-vault:aggregate-to-view",
+			Name:   "crossplane:provider:provider-vault:aggregate-to-view",
 			Labels: map[string]string{"rbac.crossplane.io/aggregate-to-view": "true", "rbac.crossplane.io/system": "provider-vault"},
 		},
 		Rules: withVerbs(rules, []string{"get", "list", "watch"}),

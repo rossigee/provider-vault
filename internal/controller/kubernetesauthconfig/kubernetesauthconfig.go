@@ -7,11 +7,11 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	ctrl "sigs.k8s.io/controller-runtime"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/kubernetesauthconfig/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"

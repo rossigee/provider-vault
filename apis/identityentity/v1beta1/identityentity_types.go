@@ -1,8 +1,8 @@
 package v1beta1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const IdentityEntityKind = "IdentityEntity"
@@ -47,8 +47,8 @@ type IdentityEntityStatus struct {
 }
 
 type IdentityEntityObservation struct {
-	Name      string `json:"name,omitempty"`
-	ID        string `json:"id,omitempty"`
+	Name        string `json:"name,omitempty"`
+	ID          string `json:"id,omitempty"`
 	CanonicalID string `json:"canonicalId,omitempty"`
 }
 

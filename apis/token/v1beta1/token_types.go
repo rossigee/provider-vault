@@ -1,8 +1,8 @@
 package v1beta1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const TokenKind = "Token"
@@ -53,11 +53,11 @@ type TokenStatus struct {
 }
 
 type TokenObservation struct {
-	Accessor       string   `json:"accessor,omitempty"`
-	ClientToken    string   `json:"clientToken,omitempty"`
-	Expiration     int64    `json:"expiration,omitempty"`
+	Accessor          string   `json:"accessor,omitempty"`
+	ClientToken       string   `json:"clientToken,omitempty"`
+	Expiration        int64    `json:"expiration,omitempty"`
 	EffectivePolicies []string `json:"effectivePolicies,omitempty"`
-	Orphan         bool     `json:"orphan,omitempty"`
+	Orphan            bool     `json:"orphan,omitempty"`
 }
 
 // +kubebuilder:object:root=true

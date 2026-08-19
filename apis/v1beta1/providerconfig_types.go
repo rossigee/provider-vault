@@ -1,8 +1,8 @@
 package v1beta1
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // +kubebuilder:object:root=true
@@ -19,7 +19,7 @@ type ProviderConfig struct {
 }
 
 type ProviderConfigSpec struct {
-	Credentials        ProviderCredentials  `json:"credentials"`
+	Credentials        ProviderCredentials `json:"credentials"`
 	Address            string              `json:"address"`
 	InsecureSkipVerify *bool               `json:"insecureSkipVerify,omitempty"`
 	TLS                *TLSConfig          `json:"tls,omitempty"`
@@ -40,7 +40,7 @@ type TLSConfig struct {
 }
 
 type ProviderCredentials struct {
-	Source xpv1.CredentialsSource `json:"source"`
+	Source                         xpv1.CredentialsSource `json:"source"`
 	xpv1.CommonCredentialSelectors `json:",inline"`
 }
 
@@ -54,8 +54,8 @@ type ProviderConfigStatus struct {
 // +genclient
 // +genclient:namespaced
 type ProviderConfigUsage struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
+	metav1.TypeMeta          `json:",inline"`
+	metav1.ObjectMeta        `json:"metadata,omitempty"`
 	xpv1.ProviderConfigUsage `json:",inline"`
 }
 
