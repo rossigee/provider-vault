@@ -26,7 +26,7 @@ const (
 	errCreateToken  = "cannot create Vault token"
 	errLookupToken  = "cannot lookup Vault token"
 	errRenewToken   = "cannot renew Vault token"
-	errRevokeToken  = "cannot revoke Vault token"
+	errRevokeToken  = "cannot revoke Vault token" // #nosec G101 -- error string, not a credential
 )
 
 func Setup(mgr ctrl.Manager, o controller.Options) error {

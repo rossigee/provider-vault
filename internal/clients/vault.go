@@ -23,7 +23,7 @@ import (
 	"github.com/rossigee/provider-vault/internal/version"
 )
 
-const vaultTokenHeader = "X-Vault-Token"
+const vaultTokenHeader = "X-Vault-Token" // #nosec G101 -- HTTP header name, not a credential
 
 // errNotFound is returned when the Vault API returns a 404 for a request.
 type errNotFound struct{ error }
@@ -53,7 +53,7 @@ func NewVaultClientFromConfig(baseURL string, token string, tlsInsecure bool, ca
 	}
 
 	tlsConfig := &tls.Config{
-		InsecureSkipVerify: tlsInsecure,
+		InsecureSkipVerify: tlsInsecure, // #nosec G402 -- gated by provider-config tlsInsecure flag; CA/client certs still honored when set
 		NextProtos:         []string{"http/1.1"},
 	}
 
