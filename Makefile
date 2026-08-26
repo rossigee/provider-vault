@@ -6,8 +6,8 @@ PLATFORMS ?= linux_amd64
 
 -include build/makelib/output.mk
 
-GO_REQUIRED_VERSION ?= 1.26.6
-GOLANGCILINT_VERSION ?= 2.12.2
+GO_REQUIRED_VERSION ?= 1.27.0
+GOLANGCILINT_VERSION ?= 2.13.1
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/provider
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
 GO_SUBDIRS += cmd internal apis
