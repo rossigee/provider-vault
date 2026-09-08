@@ -10,8 +10,8 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
-	"github.com/rossigee/provider-vault/internal/features"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/rossigee/provider-vault/internal/features"
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/authmethod/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
