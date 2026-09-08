@@ -10,6 +10,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/v2/pkg/controller"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/v2/pkg/resource"
+	"github.com/rossigee/provider-vault/internal/features"
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/pkiconfig/v1beta1"
@@ -60,8 +61,7 @@ func buildPKICRLParams(p v1beta1.PKIConfigParameters) map[string]interface{} {
 func Setup(mgr ctrl.Manager, o controller.Options) error {
 	name := managed.ControllerName(v1beta1.PKIConfigKind)
 
-	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1beta1.PKIConfigGroupVersionKind),
+	opts := []managed.ReconcilerOption{
 		managed.WithExternalConnector(&connector{
 			kube: mgr.GetClient(),
 		}),
@@ -69,7 +69,14 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		managed.WithPollInterval(o.PollInterval),
 		managed.WithRecorder(recorder.NewNopRecorder()),
 		managed.WithDeterministicExternalName(true),
-		managed.WithManagementPolicies())
+	}
+	if o.Features.Enabled(features.EnableAlphaManagementPolicies) {
+		opts = append(opts, managed.WithManagementPolicies())
+	}
+
+	r := managed.NewReconciler(mgr,
+		resource.ManagedKind(v1beta1.PKIConfigGroupVersionKind),
+		opts...)
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
