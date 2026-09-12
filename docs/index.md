@@ -69,6 +69,20 @@ A Crossplane v2 provider for managing HashiCorp Vault resources with complete na
 
 - **Primary**: `ghcr.io/rossigee/provider-vault:v0.2.31`
 
+## API Coverage Gaps
+
+Vault API surface not yet modeled by this provider:
+
+- **Secrets engines**: AWS/Azure/GCP secrets engine credential brokering (config resources exist but not the engine-specific operations), SSH/Transform/KMIP secrets engines
+- **Database secrets engine**: role and credential configuration (config resources exist)
+- **AppRole**: role-id management
+- **SSH/Transform/KMIP** secrets engines
+- **Replication/DR** operation endpoints
+- **Plugin catalog** management
+- **Replication/DR** operation endpoints
+- **Token**: create/renew/revoke (supported), but token roles and accessors not fully modeled
+- **Lease**: renew/revoke not modeled as resources
+
 ## Repository
 
 GitHub: [rossigee/provider-vault](https://github.com/rossigee/provider-vault)
