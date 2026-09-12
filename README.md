@@ -318,16 +318,17 @@ The Certificate resource automatically writes the issued certificate, CA chain, 
 | KubernetesAuthConfig | `kubernetesauthconfig.vault.m.crossplane.io/v1beta1` | Kubernetes auth method configuration |
 | ProviderConfig | `vault.m.crossplane.io/v1beta1` | Provider authentication and configuration |
 
+All resources are namespaced `v1beta1` (`.m.` groups) for Crossplane v2 multi-tenancy.
+
 ## Unsupported Vault APIs
 
 The following Vault APIs are not yet supported by this provider:
 
-- AWS/Azure/GCP secrets engine
-- Database secrets engine (role and credential configuration)
+- AWS/Azure/GCP secrets engine credential brokering (config resources exist)
 - AppRole role-id management
-- JWT/OIDC auth configuration (beyond basic enable)
-- AppRoleSecretID management (now supported — see above)
-- Kubernetes auth configuration (now supported)
+- SSH/Transform/KMIP secrets engines
+- Replication/DR operation endpoints
+- Plugin catalog management
 - LDAP auth configuration
 - Token create/manage/renew
 - Transit encryption key management

@@ -14,56 +14,56 @@ A Crossplane v2 provider for managing HashiCorp Vault resources with complete na
 
 | Resource | API Group | Description |
 |----------|-----------|-------------|
-| [AuthMethod](resources/authmethod.md) | `authmethod.vault.m.crossplane.io` | Enable, configure, tune, and disable auth methods |
-| [AuthBackendRole](resources/authbackendrole.md) | `authbackendrole.vault.m.crossplane.io` | JWT/AppRole/Kubernetes auth roles for identity-to-policy mapping |
-| [KubernetesAuthConfig](resources/kubernetesauthconfig.md) | `kubernetesauthconfig.vault.m.crossplane.io` | Kubernetes auth method configuration with token reviewers |
-| [AppRoleSecretID](resources/approlesecretid.md) | `approlesecretid.vault.m.crossplane.io` | Generate and manage AppRole SecretIDs |
-| [JWTAuthConfig](resources/jwtauthconfig.md) | `jwtauthconfig.vault.m.crossplane.io` | JWT/OIDC auth method configuration |
-| [LDAPAuthConfig](resources/ldapauthconfig.md) | `ldapauthconfig.vault.m.crossplane.io` | LDAP auth method configuration |
-| [AWSAuthConfig](resources/awsauthconfig.md) | `awsauthconfig.vault.m.crossplane.io` | AWS IAM auth method configuration |
-| [AzureAuthConfig](resources/azureauthconfig.md) | `azureauthconfig.vault.m.crossplane.io` | Azure MSI auth method configuration |
-| [GCPAuthConfig](resources/gcpauthconfig.md) | `gcpauthconfig.vault.m.crossplane.io` | GCP GCE/GKE auth method configuration |
+| [AuthMethod](resources/authmethod.md) | `authmethod.vault.m.crossplane.io/v1beta1` | Enable, configure, tune, and disable auth methods |
+| [AuthBackendRole](resources/authbackendrole.md) | `authbackendrole.vault.m.crossplane.io/v1beta1` | JWT/AppRole/Kubernetes auth roles for identity-to-policy mapping |
+| [KubernetesAuthConfig](resources/kubernetesauthconfig.md) | `kubernetesauthconfig.vault.m.crossplane.io/v1beta1` | Kubernetes auth method configuration with token reviewers |
+| [AppRoleSecretID](resources/approlesecretid.md) | `approlesecretid.vault.m.crossplane.io/v1beta1` | Generate and manage AppRole SecretIDs |
+| [JWTAuthConfig](resources/jwtauthconfig.md) | `jwtauthconfig.vault.m.crossplane.io/v1beta1` | JWT/OIDC auth method configuration |
+| [LDAPAuthConfig](resources/ldapauthconfig.md) | `ldapauthconfig.vault.m.crossplane.io/v1beta1` | LDAP auth method configuration |
+| [AWSAuthConfig](resources/awsauthconfig.md) | `awsauthconfig.vault.m.crossplane.io/v1beta1` | AWS IAM auth method configuration |
+| [AzureAuthConfig](resources/azureauthconfig.md) | `azureauthconfig.vault.m.crossplane.io/v1beta1` | Azure MSI auth method configuration |
+| [GCPAuthConfig](resources/gcpauthconfig.md) | `gcpauthconfig.vault.m.crossplane.io/v1beta1` | GCP GCE/GKE auth method configuration |
 
 ### Secrets & Encryption
 
 | Resource | API Group | Description |
 |----------|-----------|-------------|
-| [KVSecret](resources/kvsecret.md) | `kvsecret.vault.m.crossplane.io` | KV v2 secret create/read/update/delete |
-| [TransitKey](resources/transitkey.md) | `transitkey.vault.m.crossplane.io` | Encryption key management |
-| [Token](resources/token.md) | `token.vault.m.crossplane.io` | Token create/renew/revoke with auto-renewal |
+| [KVSecret](resources/kvsecret.md) | `kvsecret.vault.m.crossplane.io/v1beta1` | KV v2 secret create/read/update/delete |
+| [TransitKey](resources/transitkey.md) | `transitkey.vault.m.crossplane.io/v1beta1` | Encryption key management |
+| [Token](resources/token.md) | `token.vault.m.crossplane.io/v1beta1` | Token create/renew/revoke with auto-renewal |
 
 ### PKI & Certificates
 
 | Resource | API Group | Description |
 |----------|-----------|-------------|
-| [Mount](resources/mount.md) | `mount.vault.m.crossplane.io` | Secret engine mount enable/tune/disable |
-| [PKIConfig](resources/pkiconfig.md) | `pkiconfig.vault.m.crossplane.io` | PKI root CA generation and URL configuration |
-| [SecretBackendRole](resources/secretbackendrole.md) | `secretbackendrole.vault.m.crossplane.io` | PKI certificate role configuration |
-| [Certificate](resources/certificate.md) | `certificate.vault.m.crossplane.io` | PKI certificate issuance with auto-renewal |
+| [Mount](resources/mount.md) | `mount.vault.m.crossplane.io/v1beta1` | Secret engine mount enable/tune/disable |
+| [PKIConfig](resources/pkiconfig.md) | `pkiconfig.vault.m.crossplane.io/v1beta1` | PKI root CA generation and URL configuration |
+| [SecretBackendRole](resources/secretbackendrole.md) | `secretbackendrole.vault.m.crossplane.io/v1beta1` | PKI certificate role configuration |
+| [Certificate](resources/certificate.md) | `certificate.vault.m.crossplane.io/v1beta1` | PKI certificate issuance with auto-renewal |
 
 ### Databases
 
 | Resource | API Group | Description |
 |----------|-----------|-------------|
-| [DatabaseBackend](resources/databasebackend.md) | `databasebackend.vault.m.crossplane.io` | Database connection configuration |
-| [DatabaseRole](resources/databaserole.md) | `databaserole.vault.m.crossplane.io` | Dynamic database credential roles |
+| [DatabaseBackend](resources/databasebackend.md) | `databasebackend.vault.m.crossplane.io/v1beta1` | Database connection configuration |
+| [DatabaseRole](resources/databaserole.md) | `databaserole.vault.m.crossplane.io/v1beta1` | Dynamic database credential roles |
 
 ### Access Control & Policies
 
 | Resource | API Group | Description |
 |----------|-----------|-------------|
-| [Policy](resources/policy.md) | `policy.vault.m.crossplane.io` | ACL policy management |
-| [IdentityEntity](resources/identityentity.md) | `identityentity.vault.m.crossplane.io` | Identity entity management |
-| [IdentityGroup](resources/identitygroup.md) | `identitygroup.vault.m.crossplane.io` | Identity group management |
-| [AuditDevice](resources/auditdevice.md) | `auditdevice.vault.m.crossplane.io` | Audit device configuration |
+| [Policy](resources/policy.md) | `policy.vault.m.crossplane.io/v1beta1` | ACL policy management |
+| [IdentityEntity](resources/identityentity.md) | `identityentity.vault.m.crossplane.io/v1beta1` | Identity entity management |
+| [IdentityGroup](resources/identitygroup.md) | `identitygroup.vault.m.crossplane.io/v1beta1` | Identity group management |
+| [AuditDevice](resources/auditdevice.md) | `auditdevice.vault.m.crossplane.io/v1beta1` | Audit device configuration |
 
 ### Isolation & Governance
 
 | Resource | API Group | Description |
 |----------|-----------|-------------|
-| [VaultNamespace](resources/namespaces.md) | `namespaces.vault.m.crossplane.io` | Vault namespace management |
-| [Quota](resources/quota.md) | `quota.vault.m.crossplane.io` | Rate and lease quota limits |
-| [LeaseRenewal](resources/leaserenewal.md) | `leaserenewal.vault.m.crossplane.io` | Automatic lease renewal |
+| [VaultNamespace](resources/namespaces.md) | `namespaces.vault.m.crossplane.io/v1beta1` | Vault namespace management |
+| [Quota](resources/quota.md) | `quota.vault.m.crossplane.io/v1beta1` | Rate and lease quota limits |
+| [LeaseRenewal](resources/leaserenewal.md) | `leaserenewal.vault.m.crossplane.io/v1beta1` | Automatic lease renewal |
 
 ## Container Registry
 
