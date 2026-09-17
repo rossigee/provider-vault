@@ -29,27 +29,30 @@ type AuthBackendRoleSpec struct {
 }
 
 type AuthBackendRoleParameters struct {
-	Backend                       string   `json:"backend"`
-	RoleName                      string   `json:"roleName"`
-	RoleType                      string   `json:"roleType,omitempty"`
-	BoundAudiences                []string `json:"boundAudiences,omitempty"`
-	BoundSubject                  string   `json:"boundSubject,omitempty"`
-	BoundServiceAccountNames      []string `json:"boundServiceAccountNames,omitempty"`
-	BoundServiceAccountNamespaces []string `json:"boundServiceAccountNamespaces,omitempty"`
-	UserClaim                     string   `json:"userClaim,omitempty"`
-	GroupsClaim                   string   `json:"groupsClaim,omitempty"`
-	Policies                      []string `json:"policies,omitempty"`
-	TokenPolicies                 []string `json:"tokenPolicies,omitempty"`
-	TokenTTL                      *int     `json:"tokenTtl,omitempty"`
-	TokenMaxTTL                   *int     `json:"tokenMaxTtl,omitempty"`
-	TokenPeriod                   *int     `json:"tokenPeriod,omitempty"`
-	TokenNumUses                  *int     `json:"tokenNumUses,omitempty"`
-	TokenType                     string   `json:"tokenType,omitempty"`
-	SecretIDTTL                   *int     `json:"secretIdTtl,omitempty"`
-	SecretIDNumUses               *int     `json:"secretIdNumUses,omitempty"`
-	TokenBoundCIDRs               []string `json:"tokenBoundCidrs,omitempty"`
-	AllowedRedirectURIs           []string `json:"allowedRedirectUris,omitempty"`
-	ClockSkewLeeway               *int     `json:"clockSkewLeeway,omitempty"`
+	Backend                       string            `json:"backend"`
+	RoleName                      string            `json:"roleName"`
+	RoleType                      string            `json:"roleType,omitempty"`
+	BoundAudiences                []string          `json:"boundAudiences,omitempty"`
+	BoundSubject                  string            `json:"boundSubject,omitempty"`
+	BoundClaims                   map[string]string `json:"boundClaims,omitempty"`
+	BoundClaimsType               string            `json:"boundClaimsType,omitempty"`
+	BoundServiceAccountNames      []string          `json:"boundServiceAccountNames,omitempty"`
+	BoundServiceAccountNamespaces []string          `json:"boundServiceAccountNamespaces,omitempty"`
+	UserClaim                     string            `json:"userClaim,omitempty"`
+	GroupsClaim                   string            `json:"groupsClaim,omitempty"`
+	OidcScopes                    []string          `json:"oidcScopes,omitempty"`
+	Policies                      []string          `json:"policies,omitempty"`
+	TokenPolicies                 []string          `json:"tokenPolicies,omitempty"`
+	TokenTTL                      *int              `json:"tokenTtl,omitempty"`
+	TokenMaxTTL                   *int              `json:"tokenMaxTtl,omitempty"`
+	TokenPeriod                   *int              `json:"tokenPeriod,omitempty"`
+	TokenNumUses                  *int              `json:"tokenNumUses,omitempty"`
+	TokenType                     string            `json:"tokenType,omitempty"`
+	SecretIDTTL                   *int              `json:"secretIdTtl,omitempty"`
+	SecretIDNumUses               *int              `json:"secretIdNumUses,omitempty"`
+	TokenBoundCIDRs               []string          `json:"tokenBoundCidrs,omitempty"`
+	AllowedRedirectURIs           []string          `json:"allowedRedirectUris,omitempty"`
+	ClockSkewLeeway               *int              `json:"clockSkewLeeway,omitempty"`
 }
 
 type AuthBackendRoleStatus struct {

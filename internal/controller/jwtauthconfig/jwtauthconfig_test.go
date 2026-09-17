@@ -9,8 +9,11 @@ import (
 	"strings"
 	"testing"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
+	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	v1beta1 "github.com/rossigee/provider-vault/apis/jwtauthconfig/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
 )
@@ -233,5 +236,72 @@ func TestConfigureJWTAuth_FullConfig(t *testing.T) {
 	_, err := e.Create(context.Background(), cr)
 	if err != nil {
 		t.Fatalf("Create: %v", err)
+	}
+}
+
+func TestCreate_OIDCClientSecretSecretRef(t *testing.T) {
+	e, srv, cr := newTestJWTAuthConfig(t, func(w http.ResponseWriter, r *http.Request) {
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["oidc_client_secret"] != "secret-from-k8s" {
+			t.Errorf("oidc_client_secret = %v, want secret-from-k8s", body["oidc_client_secret"])
+		}
+		w.WriteHeader(204)
+	})
+	defer srv.Close()
+
+	e.kube = fake.NewClientBuilder().WithObjects(
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "vault-oidc-client",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{
+				"clientSecret": []byte("secret-from-k8s"),
+			},
+		},
+	).Build()
+
+	cr.Spec.ForProvider.OIDCClientID = "vault"
+	cr.Spec.ForProvider.OIDCClientSecretSecretRef = &xpv1.SecretKeySelector{
+		SecretReference: xpv1.SecretReference{
+			Name:      "vault-oidc-client",
+			Namespace: "default",
+		},
+		Key: "clientSecret",
+	}
+
+	_, err := e.Create(context.Background(), cr)
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+}
+
+func TestCreate_OIDCClientSecretSecretRefMissingKey(t *testing.T) {
+	e, srv, cr := newTestJWTAuthConfig(t, func(w http.ResponseWriter, r *http.Request) {
+		t.Errorf("unexpected Vault call")
+	})
+	defer srv.Close()
+
+	e.kube = fake.NewClientBuilder().WithObjects(
+		&corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "vault-oidc-client",
+				Namespace: "default",
+			},
+			Data: map[string][]byte{},
+		},
+	).Build()
+
+	cr.Spec.ForProvider.OIDCClientSecretSecretRef = &xpv1.SecretKeySelector{
+		SecretReference: xpv1.SecretReference{
+			Name:      "vault-oidc-client",
+			Namespace: "default",
+		},
+		Key: "clientSecret",
+	}
+
+	if _, err := e.Create(context.Background(), cr); err == nil {
+		t.Error("expected error for secret missing key")
 	}
 }

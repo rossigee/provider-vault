@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
+	corev1 "k8s.io/api/core/v1"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -25,6 +26,7 @@ const (
 	errGetCreds         = "cannot get credentials"
 	errCreateJAC        = "cannot create JWT auth config"
 	errDeleteJAC        = "cannot delete JWT auth config"
+	errGetOIDCSecret    = "cannot resolve OIDC client secret"
 )
 
 func Setup(mgr ctrl.Manager, o controller.Options) error {
@@ -73,11 +75,12 @@ func (c *connector) Connect(ctx context.Context, mg resource.Managed) (managed.E
 		return nil, err
 	}
 
-	return &external{service: svc}, nil
+	return &external{service: svc, kube: c.kube}, nil
 }
 
 type external struct {
 	service *clients.VaultClient
+	kube    client.Client
 }
 
 func (c *external) Disconnect(ctx context.Context) error {
@@ -175,8 +178,12 @@ func (e *external) configureJWTAuth(ctx context.Context, cr *v1beta1.JWTAuthConf
 	if p.OIDCClientID != "" {
 		params["oidc_client_id"] = p.OIDCClientID
 	}
-	if p.OIDCClientSecret != "" {
-		params["oidc_client_secret"] = p.OIDCClientSecret
+	secret, err := e.oidcClientSecret(ctx, cr)
+	if err != nil {
+		return err
+	}
+	if secret != "" {
+		params["oidc_client_secret"] = secret
 	}
 	if len(p.JWTValidationPubKeys) > 0 {
 		params["jwt_validation_pubkeys"] = p.JWTValidationPubKeys
@@ -201,4 +208,24 @@ func (e *external) configureJWTAuth(ctx context.Context, cr *v1beta1.JWTAuthConf
 	}
 
 	return e.service.ConfigureJWTAuth(ctx, p.Backend, params)
+}
+
+// oidcClientSecret resolves the OIDC client secret from the secret reference
+// if set, falling back to the inline OIDCClientSecret.
+func (e *external) oidcClientSecret(ctx context.Context, cr *v1beta1.JWTAuthConfig) (string, error) {
+	if ref := cr.Spec.ForProvider.OIDCClientSecretSecretRef; ref != nil {
+		secret := &corev1.Secret{}
+		if err := e.kube.Get(ctx, client.ObjectKey{
+			Name:      ref.Name,
+			Namespace: ref.Namespace,
+		}, secret); err != nil {
+			return "", errors.Wrap(err, errGetOIDCSecret)
+		}
+		raw, ok := secret.Data[ref.Key]
+		if !ok {
+			return "", errors.Errorf("%s: secret %s/%s missing key %s", errGetOIDCSecret, ref.Namespace, ref.Name, ref.Key)
+		}
+		return string(raw), nil
+	}
+	return cr.Spec.ForProvider.OIDCClientSecret, nil
 }

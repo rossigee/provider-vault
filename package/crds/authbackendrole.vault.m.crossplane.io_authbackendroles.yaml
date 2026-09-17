@@ -53,6 +53,12 @@ spec:
                     items:
                       type: string
                     type: array
+                  boundClaims:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  boundClaimsType:
+                    type: string
                   boundServiceAccountNames:
                     items:
                       type: string
@@ -67,6 +73,10 @@ spec:
                     type: integer
                   groupsClaim:
                     type: string
+                  oidcScopes:
+                    items:
+                      type: string
+                    type: array
                   policies:
                     items:
                       type: string

@@ -11,7 +11,8 @@ Configure JWT/OIDC authentication method for Vault.
 | `forProvider.backend` | string | yes | Auth mount path (e.g., `jwt`) |
 | `forProvider.oidcDiscoveryUrl` | string | no | OIDC discovery URL |
 | `forProvider.oidcClientId` | string | no | OIDC client ID |
-| `forProvider.oidcClientSecret` | string | no | OIDC client secret (use secretRef in production) |
+| `forProvider.oidcClientSecret` | string | no | OIDC client secret (inline; avoid in Git) |
+| `forProvider.oidcClientSecretSecretRef` | SecretKeySelector | no | Ref to K8s secret holding the OIDC client secret (preferred; takes precedence) |
 | `forProvider.jwtValidationPubkeys` | string | no | PEM-encoded public keys for JWT validation |
 | `forProvider.boundIssuer` | string | no | Expected issuer claim |
 | `forProvider.defaultRole` | string | no | Default role for JWT logins |
@@ -30,7 +31,10 @@ spec:
     backend: oidc
     oidcDiscoveryUrl: https://accounts.google.com
     oidcClientId: vault-oidc-client
-    oidcClientSecret: secret
+    oidcClientSecretSecretRef:
+      name: vault-oidc-client
+      namespace: vault
+      key: clientSecret
     defaultRole: default
   providerConfigRef:
     name: default

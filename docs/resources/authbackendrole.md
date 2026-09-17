@@ -13,8 +13,11 @@ Create and manage JWT, AppRole, and Kubernetes auth roles for identity-to-policy
 | `forProvider.roleType` | string | no | Role type: `jwt`, `approle`, or `kubernetes` |
 | `forProvider.boundAudiences` | []string | no | List of bound audiences for JWT roles |
 | `forProvider.boundSubject` | string | no | Bound subject for JWT/Kubernetes roles |
+| `forProvider.boundClaims` | map[string]string | no | Claims-to-values map that must match (OIDC/JWT, e.g. `{"groups": "admin"}`) |
+| `forProvider.boundClaimsType` | string | no | How to interpret `boundClaims` values: `string` (exact) or `glob` (wildcard, Vault 1.4+) |
 | `forProvider.userClaim` | string | no | User claim for JWT roles |
 | `forProvider.groupsClaim` | string | no | Groups claim for JWT roles |
+| `forProvider.oidcScopes` | []string | no | OIDC scopes to request (OIDC only, `openid` is automatic) |
 | `forProvider.policies` | []string | no | Legacy policies to attach |
 | `forProvider.tokenPolicies` | []string | no | Token policies to attach |
 | `forProvider.tokenTtl` | int (seconds) | no | Token TTL |
@@ -55,8 +58,42 @@ spec:
     name: default
 ```
 
-## Example (AppRole)
+## Example (OIDC with group binding)
 
+```yaml
+apiVersion: authbackendrole.vault.m.crossplane.io/v1beta1
+kind: AuthBackendRole
+metadata:
+  name: oidc-admin
+  namespace: vault
+spec:
+  forProvider:
+    backend: oidc
+    roleName: admin
+    roleType: oidc
+    boundAudiences:
+      - vault
+    boundClaims:
+      groups: admin
+    boundClaimsType: string
+    userClaim: sub
+    oidcScopes:
+      - openid
+      - profile
+      - email
+      - groups
+    allowedRedirectUris:
+      - https://vault.example.com/ui/vault/auth/oidc/oidc/callback
+    tokenPolicies:
+      - vault-admin
+      - default
+    tokenTtl: 3600
+    tokenMaxTtl: 86400
+  providerConfigRef:
+    name: default
+```
+
+## Example (AppRole)
 ```yaml
 apiVersion: authbackendrole.vault.m.crossplane.io/v1beta1
 kind: AuthBackendRole
