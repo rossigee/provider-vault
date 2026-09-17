@@ -42,6 +42,11 @@ type JWTAuthConfigParameters struct {
 	OIDCClientID string `json:"oidcClientId,omitempty"`
 	// OIDCClientSecret is the OAuth2 client secret for OIDC authentication.
 	OIDCClientSecret string `json:"oidcClientSecret,omitempty"`
+	// OIDCClientSecretSecretRef references a Kubernetes secret containing the
+	// OAuth2 client secret for OIDC authentication. Takes precedence over
+	// OIDCClientSecret when both are set. Prefer this over the inline field
+	// so the secret never lands in Git.
+	OIDCClientSecretSecretRef *xpv1.SecretKeySelector `json:"oidcClientSecretSecretRef,omitempty"`
 
 	// --- JWT configuration ---
 

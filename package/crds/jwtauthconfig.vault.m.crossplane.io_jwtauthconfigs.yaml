@@ -76,6 +76,27 @@ spec:
                     description: OIDCClientSecret is the OAuth2 client secret for
                       OIDC authentication.
                     type: string
+                  oidcClientSecretSecretRef:
+                    description: |-
+                      OIDCClientSecretSecretRef references a Kubernetes secret containing the
+                      OAuth2 client secret for OIDC authentication. Takes precedence over
+                      OIDCClientSecret when both are set. Prefer this over the inline field
+                      so the secret never lands in Git.
+                    properties:
+                      key:
+                        description: The key to select.
+                        type: string
+                      name:
+                        description: Name of the secret.
+                        type: string
+                      namespace:
+                        description: Namespace of the secret.
+                        type: string
+                    required:
+                    - key
+                    - name
+                    - namespace
+                    type: object
                   oidcDiscoveryCaPem:
                     description: OIDCDiscoveryCAPEM is the PEM-encoded CA certificate
                       for the OIDC discovery URL.

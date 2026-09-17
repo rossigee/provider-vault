@@ -106,6 +106,13 @@ func (in *AuthBackendRoleParameters) DeepCopyInto(out *AuthBackendRoleParameters
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}
+	if in.BoundClaims != nil {
+		in, out := &in.BoundClaims, &out.BoundClaims
+		*out = make(map[string]string, len(*in))
+		for key, val := range *in {
+			(*out)[key] = val
+		}
+	}
 	if in.BoundServiceAccountNames != nil {
 		in, out := &in.BoundServiceAccountNames, &out.BoundServiceAccountNames
 		*out = make([]string, len(*in))
@@ -113,6 +120,11 @@ func (in *AuthBackendRoleParameters) DeepCopyInto(out *AuthBackendRoleParameters
 	}
 	if in.BoundServiceAccountNamespaces != nil {
 		in, out := &in.BoundServiceAccountNamespaces, &out.BoundServiceAccountNamespaces
+		*out = make([]string, len(*in))
+		copy(*out, *in)
+	}
+	if in.OidcScopes != nil {
+		in, out := &in.OidcScopes, &out.OidcScopes
 		*out = make([]string, len(*in))
 		copy(*out, *in)
 	}

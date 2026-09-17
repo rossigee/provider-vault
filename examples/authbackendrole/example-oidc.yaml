@@ -1,0 +1,30 @@
+apiVersion: authbackendrole.vault.m.crossplane.io/v1beta1
+kind: AuthBackendRole
+metadata:
+  name: oidc-admin
+  namespace: vault
+spec:
+  forProvider:
+    backend: oidc
+    roleName: admin
+    roleType: oidc
+    boundAudiences:
+    - vault
+    boundClaims:
+      groups: admin
+    boundClaimsType: string
+    userClaim: sub
+    oidcScopes:
+    - openid
+    - profile
+    - email
+    - groups
+    allowedRedirectUris:
+    - https://vault.example.com/ui/vault/auth/oidc/oidc/callback
+    tokenPolicies:
+    - vault-admin
+    - default
+    tokenTtl: 3600
+    tokenMaxTtl: 86400
+  providerConfigRef:
+    name: default

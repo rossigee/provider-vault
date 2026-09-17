@@ -109,6 +109,12 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if clients.DriftedString(data, "bound_subject", p.BoundSubject) {
 		upToDate = false
 	}
+	if clients.DriftedStringMap(data, "bound_claims", p.BoundClaims) {
+		upToDate = false
+	}
+	if clients.DriftedString(data, "bound_claims_type", p.BoundClaimsType) {
+		upToDate = false
+	}
 	if clients.DriftedStringSlice(data, "bound_service_account_names", p.BoundServiceAccountNames) {
 		upToDate = false
 	}
@@ -119,6 +125,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		upToDate = false
 	}
 	if clients.DriftedString(data, "groups_claim", p.GroupsClaim) {
+		upToDate = false
+	}
+	if clients.DriftedStringSlice(data, "oidc_scopes", p.OidcScopes) {
 		upToDate = false
 	}
 	if clients.DriftedStringSlice(data, "policies", p.Policies) {
@@ -221,6 +230,12 @@ func buildAuthBackendRoleParams(p v1beta1.AuthBackendRoleParameters) map[string]
 	if p.BoundSubject != "" {
 		params["bound_subject"] = p.BoundSubject
 	}
+	if len(p.BoundClaims) > 0 {
+		params["bound_claims"] = p.BoundClaims
+	}
+	if p.BoundClaimsType != "" {
+		params["bound_claims_type"] = p.BoundClaimsType
+	}
 	if len(p.BoundServiceAccountNames) > 0 {
 		params["bound_service_account_names"] = p.BoundServiceAccountNames
 	}
@@ -232,6 +247,9 @@ func buildAuthBackendRoleParams(p v1beta1.AuthBackendRoleParameters) map[string]
 	}
 	if p.GroupsClaim != "" {
 		params["groups_claim"] = p.GroupsClaim
+	}
+	if len(p.OidcScopes) > 0 {
+		params["oidc_scopes"] = p.OidcScopes
 	}
 	if len(p.Policies) > 0 {
 		params["policies"] = p.Policies
