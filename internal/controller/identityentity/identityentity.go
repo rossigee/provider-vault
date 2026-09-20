@@ -3,6 +3,8 @@ package identityentity
 import (
 	"context"
 
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -16,7 +18,6 @@ import (
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/identityentity/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
-	"github.com/rossigee/provider-vault/internal/recorder"
 )
 
 const (
@@ -38,7 +39,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		}),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithPollInterval(o.PollInterval),
-		managed.WithRecorder(recorder.NewNopRecorder()),
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorder(name))),
 		managed.WithDeterministicExternalName(true),
 	}
 	if o.Features.Enabled(features.EnableAlphaManagementPolicies) {

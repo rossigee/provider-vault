@@ -3,6 +3,8 @@ package kvsecret
 import (
 	"context"
 
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -16,7 +18,6 @@ import (
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/kvsecret/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
-	"github.com/rossigee/provider-vault/internal/recorder"
 )
 
 const (
@@ -37,7 +38,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		}),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithPollInterval(o.PollInterval),
-		managed.WithRecorder(recorder.NewNopRecorder()),
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorder(name))),
 		managed.WithDeterministicExternalName(true),
 	}
 	if o.Features.Enabled(features.EnableAlphaManagementPolicies) {
