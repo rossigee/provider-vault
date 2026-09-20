@@ -20,12 +20,13 @@ import (
 )
 
 const (
-	errNotPolicy    = "managed resource is not a Policy custom resource"
-	errTrackPCUsage = "cannot track ProviderConfig usage"
-	errGetPC        = "cannot get ProviderConfig"
-	errGetCreds     = "cannot get credentials"
-	errCreatePolicy = "cannot create Vault policy"
-	errDeletePolicy = "cannot delete Vault policy"
+	errNotPolicy      = "managed resource is not a Policy custom resource"
+	errTrackPCUsage   = "cannot track ProviderConfig usage"
+	errGetPC          = "cannot get ProviderConfig"
+	errGetCreds       = "cannot get credentials"
+	errCreatePolicy   = "cannot create Vault policy"
+	errDeletePolicy   = "cannot delete Vault policy"
+	errReservedPolicy = "cannot manage reserved policy"
 )
 
 func Setup(mgr ctrl.Manager, o controller.Options) error {
@@ -113,6 +114,9 @@ func (e *external) Create(ctx context.Context, mg resource.Managed) (managed.Ext
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errNotPolicy)
 	}
+	if err := cr.Spec.ForProvider.Validate(); err != nil {
+		return managed.ExternalCreation{}, errors.Wrap(err, errReservedPolicy)
+	}
 	if err := e.service.CreatePolicy(ctx, cr.Spec.ForProvider.Name, cr.Spec.ForProvider.Policy); err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreatePolicy)
 	}
@@ -123,6 +127,9 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 	cr, ok := mg.(*v1beta1.Policy)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errNotPolicy)
+	}
+	if err := cr.Spec.ForProvider.Validate(); err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errReservedPolicy)
 	}
 	if err := e.service.CreatePolicy(ctx, cr.Spec.ForProvider.Name, cr.Spec.ForProvider.Policy); err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errCreatePolicy)
