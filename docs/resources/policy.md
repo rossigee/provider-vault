@@ -12,6 +12,17 @@ Create and manage Vault ACL policies.
 | `forProvider.policy` | string | yes | HCL policy definition |
 | `providerConfigRef.name` | string | yes | ProviderConfig name |
 
+## Reserved Policy Names
+
+The following policy names are reserved by Vault and cannot be managed through this provider:
+
+- `default`
+- `deny`
+- `readonly`
+- `readwrite`
+
+Attempts to create or update a Policy with a reserved name will be rejected.
+
 ## Example
 
 ```yaml
