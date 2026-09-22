@@ -1,6 +1,8 @@
 package v1beta1
 
 import (
+	"errors"
+
 	xpv1 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -28,9 +30,23 @@ type PolicySpec struct {
 	ForProvider              PolicyParameters `json:"forProvider"`
 }
 
+var reservedPolicyNames = map[string]bool{
+	"readwrite": true,
+	"readonly":  true,
+	"deny":      true,
+	"default":   true,
+}
+
 type PolicyParameters struct {
 	Name   string `json:"name"`
 	Policy string `json:"policy"`
+}
+
+func (p *PolicyParameters) Validate() error {
+	if reservedPolicyNames[p.Name] {
+		return errors.New("policy name " + p.Name + " is reserved and cannot be managed")
+	}
+	return nil
 }
 
 type PolicyStatus struct {

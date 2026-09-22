@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/crossplane/crossplane-runtime/v2/pkg/event"
+
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -19,7 +21,6 @@ import (
 
 	v1beta1 "github.com/rossigee/provider-vault/apis/approlesecretid/v1beta1"
 	"github.com/rossigee/provider-vault/internal/clients"
-	"github.com/rossigee/provider-vault/internal/recorder"
 )
 
 const (
@@ -42,7 +43,7 @@ func Setup(mgr ctrl.Manager, o controller.Options) error {
 		}),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
 		managed.WithPollInterval(o.PollInterval),
-		managed.WithRecorder(recorder.NewNopRecorder()),
+		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorder(name))),
 		managed.WithDeterministicExternalName(true),
 	}
 	if o.Features.Enabled(features.EnableAlphaManagementPolicies) {
