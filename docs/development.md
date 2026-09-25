@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Go 1.26+
+- Go 1.27.1
 - Docker
 - Make
 
@@ -12,8 +12,11 @@
 # Build the binary
 make build
 
-# Build and publish with version
-make publish VERSION=v0.2.7 PLATFORMS=linux_amd64
+# Build the release package for both platforms
+make build.all build.artifacts VERSION=v0.3.5 PLATFORMS="linux_amd64 linux_arm64"
+for platform in linux_amd64 linux_arm64; do
+  make xpkg.build VERSION=v0.3.5 PLATFORMS="linux_amd64 linux_arm64" PLATFORM="$platform"
+done
 ```
 
 ## Test
@@ -77,14 +80,25 @@ The provider uses a raw HTTP client (`internal/clients/vault.go`) to communicate
 
 ## Releasing
 
-```bash
-# Build and publish
-make publish VERSION=v0.2.7 PLATFORMS=linux_amd64
+1. Update `VERSION`, `internal/version/version.go`, `package/crossplane.yaml`, and current documentation references.
+2. Add the release entry to `CHANGELOG.md`.
+3. Open a release PR from `release/v0.3.5` based on `origin/master`.
+4. After the PR is merged and `master` is green, run:
 
-# Update the provider in your cluster
-kubectl patch provider provider-vault --type='merge' \
-  -p='{"spec":{"package":"ghcr.io/rossigee/provider-vault:v0.2.7"}}'
-```
+   ```bash
+   set -euo pipefail
+   VERSION=v0.3.5
+   git fetch origin master
+   test -z "$(git status --porcelain)"
+   test "$(git rev-parse HEAD)" = "$(git rev-parse origin/master)"
+   test "$(<VERSION)" = "$VERSION"
+   test -z "$(git show-ref --tags "$VERSION")"
+   test -z "$(git ls-remote --tags origin "refs/tags/$VERSION")"
+   git tag -a "$VERSION" -m "Release $VERSION" HEAD
+   git push origin "refs/tags/$VERSION"
+   ```
+
+5. The tag-only workflow builds and publishes `linux_amd64` and `linux_arm64` packages, aliases `latest`, verifies equal digests and both architectures, and creates the GitHub Release.
 
 ## Troubleshooting Build Issues
 
