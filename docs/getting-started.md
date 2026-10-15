@@ -2,14 +2,14 @@
 
 ## Prerequisites
 
-- Kubernetes cluster with Crossplane v2.0+ installed
+- Kubernetes cluster with Crossplane v2.5+ installed
 - HashiCorp Vault server with token authentication
 - Vault token with appropriate permissions for the resources you want to manage
 
 ## Installation
 
 ```bash
-kubectl crossplane install provider ghcr.io/rossigee/provider-vault:v0.2.7
+kubectl crossplane install provider ghcr.io/rossigee/provider-vault:v0.3.5
 ```
 
 Verify the provider is healthy:

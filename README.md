@@ -11,7 +11,7 @@ A Crossplane v2 provider for managing HashiCorp Vault resources with complete na
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-vault:v0.2.7`
+- **Primary**: `ghcr.io/rossigee/provider-vault:v0.3.5`
 
 ## Overview
 
@@ -51,7 +51,7 @@ A lightweight Crossplane v2 provider for managing HashiCorp Vault resources, des
 ### Installation
 
 ```bash
-kubectl crossplane install provider ghcr.io/rossigee/provider-vault:v0.2.7
+kubectl crossplane install provider ghcr.io/rossigee/provider-vault:v0.3.5
 ```
 
 ### Configuration
@@ -357,7 +357,7 @@ make lint
 make generate
 
 # Build and publish
-make publish VERSION=v0.2.7 PLATFORMS=linux_amd64
+make publish VERSION=v0.3.5 PLATFORMS="linux_amd64 linux_arm64"
 ```
 
 ## Contributing

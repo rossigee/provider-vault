@@ -67,7 +67,7 @@ A Crossplane v2 provider for managing HashiCorp Vault resources with complete na
 
 ## Container Registry
 
-- **Primary**: `ghcr.io/rossigee/provider-vault:v0.2.31`
+- **Primary**: `ghcr.io/rossigee/provider-vault:v0.3.5`
 
 ## API Coverage Gaps
 

@@ -1,7 +1,8 @@
 PROJECT_NAME := provider-vault
 PROJECT_REPO := github.com/rossigee/$(PROJECT_NAME)
+CROSSPLANE_VERSION = 2.5.0
 
-PLATFORMS ?= linux_amd64
+PLATFORMS ?= linux_amd64 linux_arm64
 -include build/makelib/common.mk
 
 -include build/makelib/output.mk
