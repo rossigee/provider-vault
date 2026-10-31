@@ -7,18 +7,18 @@ spec:
   forProvider:
     backend: pki-production-ecdsa
     type: root_internal
-    commonName: Golder Production ECDSA Root CA
+    commonName: Example Production ECDSA Root CA
     ttl: 87600h
     keyType: ec
     keyBits: 384
     organization:
-      - Golder
+      - Example
     permittedDnsDomains:
-      - golder.lan
+      - example.lan
       - svc.cluster.local
     issuingCertificates:
-      - https://vault.golder.lan/v1/pki-production-ecdsa/ca
+      - https://vault.example.lan/v1/pki-production-ecdsa/ca
     crlDistributionPoints:
-      - https://vault.golder.lan/v1/pki-production-ecdsa/crl
+      - https://vault.example.lan/v1/pki-production-ecdsa/crl
   providerConfigRef:
     name: default

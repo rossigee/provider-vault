@@ -10,8 +10,8 @@ spec:
     allowedDomains:
     - "*.svc.cluster.local"
     - svc.cluster.local
-    - "*.golder.lan"
-    - golder.lan
+    - "*.example.lan"
+    - example.lan
     allowSubdomains: true
     allowBareDomains: true
     allowGlobDomains: true

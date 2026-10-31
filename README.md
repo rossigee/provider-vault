@@ -235,7 +235,7 @@ spec:
     roleName: flux-system
     roleType: jwt
     boundAudiences:
-      - https://k8s-api.master.golder.lan
+      - https://k8s-api.master.example.lan
     boundSubject: "system:serviceaccount:flux-system:external-secrets"
     userClaim: sub
     tokenPolicies:

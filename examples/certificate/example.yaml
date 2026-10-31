@@ -7,9 +7,9 @@ spec:
   forProvider:
     backend: pki-production-ecdsa
     role: cert-manager
-    commonName: app.production.golder.lan
+    commonName: app.production.example.lan
     altNames:
-      - app.production.golder.lan
+      - app.production.example.lan
       - app.svc.cluster.local
     ipSans:
       - 10.0.1.100
