@@ -467,6 +467,12 @@ func (c *VaultClient) EnableMount(ctx context.Context, path, engineType, descrip
 func (c *VaultClient) GetMount(ctx context.Context, path string) (map[string]interface{}, error) {
 	resp, err := c.request(ctx, http.MethodGet, "/v1/sys/mounts/"+path, nil)
 	if err != nil {
+		// Vault answers 400 (not 404) for a path with no secret engine mounted.
+		// Report it as not found so Observe returns ResourceExists: false and
+		// Create runs.
+		if strings.Contains(err.Error(), "No secret engine mount at") {
+			return nil, &errNotFound{err}
+		}
 		return nil, err
 	}
 	var result struct {
