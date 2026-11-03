@@ -25,6 +25,7 @@ const (
 	errGetPC        = "cannot get ProviderConfig"
 	errGetCreds     = "cannot get credentials"
 	errCreateMount  = "cannot create Vault mount"
+	errTuneMount    = "cannot tune Vault mount"
 	errDeleteMount  = "cannot delete Vault mount"
 )
 
@@ -91,7 +92,9 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 		return managed.ExternalObservation{}, errors.New(errNotMount)
 	}
 
-	data, err := e.service.GetMount(ctx, cr.Spec.ForProvider.Path)
+	// The tune view reports the lease TTLs Vault applies. The sys/mounts view
+	// reports 0 for them on mounts that have TTLs set, so it cannot be used here.
+	data, err := e.service.GetMountTune(ctx, cr.Spec.ForProvider.Path)
 	if err != nil {
 		if clients.IsNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, nil
@@ -105,13 +108,11 @@ func (e *external) Observe(ctx context.Context, mg resource.Managed) (managed.Ex
 	if d, ok := data["description"].(string); ok && cr.Spec.ForProvider.Description != "" && d != cr.Spec.ForProvider.Description {
 		upToDate = false
 	}
-	if cfg, ok := data["config"].(map[string]interface{}); ok {
-		if d, ok := cfg["default_lease_ttl"].(float64); ok && cr.Spec.ForProvider.DefaultLeaseTTL > 0 && int64(d) != int64(cr.Spec.ForProvider.DefaultLeaseTTL) {
-			upToDate = false
-		}
-		if d, ok := cfg["max_lease_ttl"].(float64); ok && cr.Spec.ForProvider.MaxLeaseTTL > 0 && int64(d) != int64(cr.Spec.ForProvider.MaxLeaseTTL) {
-			upToDate = false
-		}
+	if d, ok := data["default_lease_ttl"].(float64); ok && cr.Spec.ForProvider.DefaultLeaseTTL > 0 && int64(d) != int64(cr.Spec.ForProvider.DefaultLeaseTTL) {
+		upToDate = false
+	}
+	if d, ok := data["max_lease_ttl"].(float64); ok && cr.Spec.ForProvider.MaxLeaseTTL > 0 && int64(d) != int64(cr.Spec.ForProvider.MaxLeaseTTL) {
+		upToDate = false
 	}
 
 	cr.Status.SetConditions(xpv1.Available())
@@ -149,16 +150,15 @@ func (e *external) Update(ctx context.Context, mg resource.Managed) (managed.Ext
 		return managed.ExternalUpdate{}, errors.New(errNotMount)
 	}
 
-	if err := e.service.EnableMount(ctx,
+	// The mount exists, so it is tuned in place. EnableMount would fail with
+	// "path is already in use".
+	if err := e.service.TuneMount(ctx,
 		cr.Spec.ForProvider.Path,
-		cr.Spec.ForProvider.Type,
 		cr.Spec.ForProvider.Description,
 		cr.Spec.ForProvider.DefaultLeaseTTL,
 		cr.Spec.ForProvider.MaxLeaseTTL,
-		cr.Spec.ForProvider.Options,
-		cr.Spec.ForProvider.Config,
 	); err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errCreateMount)
+		return managed.ExternalUpdate{}, errors.Wrap(err, errTuneMount)
 	}
 
 	return managed.ExternalUpdate{}, nil
