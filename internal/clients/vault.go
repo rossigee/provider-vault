@@ -484,6 +484,43 @@ func (c *VaultClient) GetMount(ctx context.Context, path string) (map[string]int
 	return result.Data, nil
 }
 
+// GetMountTune returns the tune settings of a mount. Unlike GetMount, these
+// are the lease TTLs Vault applies to the mount.
+func (c *VaultClient) GetMountTune(ctx context.Context, path string) (map[string]interface{}, error) {
+	resp, err := c.request(ctx, http.MethodGet, "/v1/sys/mounts/"+path+"/tune", nil)
+	if err != nil {
+		if strings.Contains(err.Error(), "No secret engine mount at") {
+			return nil, &errNotFound{err}
+		}
+		return nil, err
+	}
+	var result struct {
+		Data map[string]interface{} `json:"data"`
+	}
+	if err := json.Unmarshal(resp, &result); err != nil {
+		return nil, errors.Wrap(err, "failed to parse mount tune response")
+	}
+	return result.Data, nil
+}
+
+// TuneMount updates the description and lease TTLs of an existing mount. Zero
+// values are left unchanged. EnableMount cannot be used on a mount that already
+// exists.
+func (c *VaultClient) TuneMount(ctx context.Context, path, description string, defaultLeaseTTL, maxLeaseTTL int) error {
+	body := map[string]interface{}{}
+	if description != "" {
+		body["description"] = description
+	}
+	if defaultLeaseTTL > 0 {
+		body["default_lease_ttl"] = defaultLeaseTTL
+	}
+	if maxLeaseTTL > 0 {
+		body["max_lease_ttl"] = maxLeaseTTL
+	}
+	_, err := c.request(ctx, http.MethodPost, "/v1/sys/mounts/"+path+"/tune", body)
+	return err
+}
+
 func (c *VaultClient) DisableMount(ctx context.Context, path string) error {
 	_, err := c.request(ctx, http.MethodDelete, "/v1/sys/mounts/"+path, nil)
 	return err

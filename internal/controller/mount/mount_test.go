@@ -42,11 +42,11 @@ func newTestMount(t *testing.T, handler http.HandlerFunc) (*external, *httptest.
 
 func TestObserve_Exists(t *testing.T) {
 	e, srv, cr := newTestMount(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/sys/mounts/secret" {
+		if r.URL.Path != "/v1/sys/mounts/secret/tune" {
 			t.Errorf("path = %s", r.URL.Path)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = fmt.Fprint(w, `{"data":{"type":"kv","description":"KV secrets engine","config":{"default_lease_ttl":0,"max_lease_ttl":0}}}`)
+		_, _ = fmt.Fprint(w, `{"data":{"description":"KV secrets engine","default_lease_ttl":0,"max_lease_ttl":0}}`)
 	})
 	defer srv.Close()
 
@@ -118,8 +118,11 @@ func TestDelete(t *testing.T) {
 
 func TestUpdate(t *testing.T) {
 	e, srv, cr := newTestMount(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/v1/sys/mounts/secret" {
+		if r.URL.Path != "/v1/sys/mounts/secret/tune" {
 			t.Errorf("path = %s", r.URL.Path)
+		}
+		if r.Method != http.MethodPost {
+			t.Errorf("method = %s, want POST", r.Method)
 		}
 		w.WriteHeader(204)
 	})
@@ -128,5 +131,25 @@ func TestUpdate(t *testing.T) {
 	_, err := e.Update(context.Background(), cr)
 	if err != nil {
 		t.Fatalf("Update: %v", err)
+	}
+}
+
+func TestObserve_TTLDriftIsNotUpToDate(t *testing.T) {
+	e, srv, cr := newTestMount(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = fmt.Fprint(w, `{"data":{"description":"KV secrets engine","default_lease_ttl":0,"max_lease_ttl":0}}`)
+	})
+	defer srv.Close()
+	cr.Spec.ForProvider.DefaultLeaseTTL = 2764800
+
+	obs, err := e.Observe(context.Background(), cr)
+	if err != nil {
+		t.Fatalf("Observe: %v", err)
+	}
+	if !obs.ResourceExists {
+		t.Error("expected ResourceExists=true")
+	}
+	if obs.ResourceUpToDate {
+		t.Error("expected ResourceUpToDate=false when the tuned TTL differs from the spec")
 	}
 }
